@@ -1,5 +1,11 @@
 package wt;
 
-public class InitialTransform {
+import ij.ImagePlus;
 
+public class InitialTransform
+{
+	public InitialTransform( final ImagePlus template, final ImagePlus wing )
+	{
+		
+	}
 }
