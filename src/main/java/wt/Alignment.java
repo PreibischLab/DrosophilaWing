@@ -8,30 +8,36 @@ import ij.process.ImageProcessor;
 import java.io.File;
 
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.FloatType;
+import spim.Threads;
 import spim.process.fusion.export.DisplayImage;
+import wt.tools.Mirror;
 
 public class Alignment
 {
+	final DisplayImage disp = new DisplayImage();
+	
 	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene )
 	{
-		final DisplayImage disp = new DisplayImage();
+		final InitialTransform transform1 = new InitialTransform( template, wing );
 
 		//disp.exportImage( template, "Template" );
 		//disp.exportImage( wing, "wing" );
 		//disp.exportImage( wingGene, "wingGene" );
 
 		final Preprocess pTemplate = new Preprocess( template );
-		pTemplate.homogenize();
-		pTemplate.extend( 0.2f, true );
+		//pTemplate.homogenize();
+		//pTemplate.extend( 0.2f, true );
 
 		final Preprocess pWing = new Preprocess( wing );
-		pWing.homogenize();
-		pWing.extend( 0.2f, true );
+		//pWing.homogenize();
+		//pWing.extend( 0.2f, true );
 
-		disp.exportImage( pTemplate.output, "homogenized template" );
-		disp.exportImage( pWing.output, "homogenized wing" );
+		//disp.exportImage( pTemplate.output, "homogenized template" );
+		//disp.exportImage( pWing.output, "homogenized wing" );
 	}
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
@@ -55,6 +61,20 @@ public class Alignment
 
 			return img;
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static FloatProcessor wrap( final Img< FloatType > img )
+	{
+		if ( !ArrayImg.class.isInstance( img ) )
+			throw new RuntimeException( "Only ArrayImg is supported" );
+
+		if ( img.numDimensions() != 2 )
+			throw new RuntimeException( "Only 2d is supported" );
+
+		final float[] array = ((ArrayImg< FloatType, FloatArray >)img).update( null ).getCurrentStorageArray();
+
+		return new FloatProcessor( (int)img.dimension( 0 ), (int)img.dimension( 1 ), array );
 	}
 
 	public static void main( String args[] )
