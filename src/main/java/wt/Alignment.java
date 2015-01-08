@@ -57,7 +57,6 @@ public class Alignment
 		final List< PointMatch > matches = transform1.createUpdatedMatches( Util.getArrayFromValue( offset, wing.numDimensions() ) );
 		final AffineModel2D model = new AffineModel2D();
 		model.fit( matches );
-		System.out.println( model );
 		pWing.transform( model );
 
 		disp.exportImage( pTemplate.output, "homogenized template" );

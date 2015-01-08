@@ -15,12 +15,13 @@ import mpicbg.models.AbstractModel;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
+import mpicbg.models.RigidModel2D;
+import mpicbg.models.SimilarityModel2D;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 import spim.Threads;
-import spim.process.fusion.export.DisplayImage;
 import wt.tools.Mirror;
 
 public class InitialTransform
@@ -77,7 +78,7 @@ public class InitialTransform
 
 		final Pair< Double, List< PointMatch > > siftResult;
 
-		if ( normal.getB().size() > mirror.getB().size() )
+		if ( normal.getB().size() / ( normal.getA()/5 ) > mirror.getB().size() / ( mirror.getA()/5 ) )
 		{
 			siftResult = normal;
 			this.mirror = false;
@@ -125,10 +126,10 @@ public class InitialTransform
 		final List< Feature > fs2 = new ArrayList< Feature >();
 
 		ijSIFT.extractFeatures( Alignment.wrap( imgA ), fs1 );
-		//IJ.log( fs1.size() + " features extracted." );
+		IJ.log( fs1.size() + " features extracted." );
 
 		ijSIFT.extractFeatures( Alignment.wrap( imgB ), fs2 );
-		//IJ.log( fs2.size() + " features extracted." );
+		IJ.log( fs2.size() + " features extracted." );
 
 		final List< PointMatch > candidates = new ArrayList< PointMatch >();
 		FeatureTransform.matchFeatures( fs1, fs2, candidates, p.rod );
@@ -136,7 +137,7 @@ public class InitialTransform
 		final List< PointMatch > inliers = new ArrayList< PointMatch >();
 		//IJ.log( candidates.size() + " potentially corresponding features identified." );
 
-		AbstractModel< ? > model = new AffineModel2D();
+		AbstractModel< ? > model = new SimilarityModel2D();
 
 		boolean modelFound;
 		try
@@ -144,7 +145,7 @@ public class InitialTransform
 			modelFound = model.filterRansac(
 					candidates,
 					inliers,
-					1000,
+					10000,
 					p.maxEpsilon,
 					p.minInlierRatio,
 					p.minNumInliers );
@@ -176,17 +177,17 @@ public class InitialTransform
 		final Param siftParam = new Param();
 
 		siftParam.initialSigma = 1.6f;
-		siftParam.steps = 3;
+		siftParam.steps = 5;
 		siftParam.minOctaveSize = 32;
-		siftParam.maxOctaveSize = 1024;
+		siftParam.maxOctaveSize = 600;
 
 		siftParam.fdSize = 4;
 		siftParam.fdBins = 8;
 
 		final InitialTransformParameters p = new InitialTransformParameters( siftParam );
 
-		p.rod = 0.99f;
-		p.maxEpsilon = 50f;
+		p.rod = 0.98f;
+		p.maxEpsilon = 40f;
 		p.minInlierRatio = 0.02f;
 		p.minNumInliers = 8;
 
