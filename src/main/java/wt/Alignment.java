@@ -1,17 +1,24 @@
 package wt;
 
+import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
 import java.io.File;
+import java.util.List;
 
+import mpicbg.models.AffineModel2D;
+import mpicbg.models.IllDefinedDataPointsException;
+import mpicbg.models.NotEnoughDataPointsException;
+import mpicbg.models.PointMatch;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 import spim.Threads;
 import spim.process.fusion.export.DisplayImage;
 import wt.tools.Mirror;
@@ -20,24 +27,41 @@ public class Alignment
 {
 	final DisplayImage disp = new DisplayImage();
 	
-	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene )
+	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
+		// find the initial alignment
 		final InitialTransform transform1 = new InitialTransform( template, wing );
 
-		//disp.exportImage( template, "Template" );
-		//disp.exportImage( wing, "wing" );
-		//disp.exportImage( wingGene, "wingGene" );
+		if ( !transform1.findInitialModel() )
+			return;
+
+		if ( transform1.mirror() )
+		{
+			IJ.log( "Mirroring wing" );
+			Mirror.mirror( wing, 0, Threads.numThreads() );
+			Mirror.mirror( wingGene, 0, Threads.numThreads() );
+		}
+
+		// preprocess and transform
+		long offset;
 
 		final Preprocess pTemplate = new Preprocess( template );
-		//pTemplate.homogenize();
-		//pTemplate.extend( 0.2f, true );
+		pTemplate.homogenize();
+		offset = pTemplate.extend( 0.2f, true );
 
 		final Preprocess pWing = new Preprocess( wing );
-		//pWing.homogenize();
-		//pWing.extend( 0.2f, true );
+		pWing.homogenize();
+		pWing.extend( 0.2f, true );
 
-		//disp.exportImage( pTemplate.output, "homogenized template" );
-		//disp.exportImage( pWing.output, "homogenized wing" );
+		// transform pWing
+		final List< PointMatch > matches = transform1.createUpdatedMatches( Util.getArrayFromValue( offset, wing.numDimensions() ) );
+		final AffineModel2D model = new AffineModel2D();
+		model.fit( matches );
+		System.out.println( model );
+		pWing.transform( model );
+
+		disp.exportImage( pTemplate.output, "homogenized template" );
+		disp.exportImage( pWing.output, "homogenized wing" );
 	}
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
@@ -77,7 +101,7 @@ public class Alignment
 		return new FloatProcessor( (int)img.dimension( 0 ), (int)img.dimension( 1 ), array );
 	}
 
-	public static void main( String args[] )
+	public static void main( String args[] ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 		new ImageJ();
 

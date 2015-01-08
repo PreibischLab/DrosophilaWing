@@ -1,10 +1,14 @@
 package wt;
 
+import mpicbg.models.AffineModel2D;
+import mpicbg.models.NoninvertibleModelException;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
+import net.imglib2.RealRandomAccess;
 import net.imglib2.algorithm.gauss3.Gauss3;
 import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.img.Img;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.RealSum;
 import net.imglib2.view.Views;
@@ -13,6 +17,7 @@ public class Preprocess
 {
 	final Img< FloatType > input;
 	Img< FloatType > output;
+	double avgBorderValue = Double.NaN;
 
 	/**
 	 * Extend the image and homogenize the contrast for proper alignment
@@ -126,8 +131,39 @@ public class Preprocess
 		return size;
 	}
 
-	public double border()
+	public void transform( final AffineModel2D model )
 	{
+		final Img< FloatType > outT = output.factory().create( this.output, this.output.firstElement() );
+
+		final Cursor< FloatType > cursor = outT.localizingCursor();
+		final RealRandomAccess< FloatType > interpolate =
+				Views.interpolate( Views.extendValue( output, new FloatType( (float)border()) ),
+						new NLinearInterpolatorFactory< FloatType >() ).realRandomAccess();
+
+		final float[] tmp = new float[ outT.numDimensions() ];
+
+		try
+		{
+
+			while ( cursor.hasNext() )
+			{
+				final FloatType t = cursor.next();
+				cursor.localize( tmp );
+				model.applyInverseInPlace( tmp );
+				interpolate.setPosition( tmp );
+				t.set( interpolate.get() );
+			}
+		} 
+		catch (NoninvertibleModelException e) { e.printStackTrace(); }
+
+		this.output = outT;
+	}
+
+	protected double border()
+	{
+		if ( !Double.isNaN( this.avgBorderValue ) )
+			return this.avgBorderValue;
+
 		// compute the average border intensity
 		// strictly 2d!
 		final RandomAccess< FloatType > r = output.randomAccess();
@@ -166,7 +202,9 @@ public class Preprocess
 			++count;
 		} while ( r.getIntPosition( 1 ) > 0 );
 
-		return avg.getSum() / (double)count;
+		this.avgBorderValue = avg.getSum() / (double)count;
+
+		return avgBorderValue;
 	}
 
 	public double avgImage( final Img< FloatType > img )
