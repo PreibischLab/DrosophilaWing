@@ -105,8 +105,14 @@ public class Alignment
 		new ImageJ();
 
 		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
-		final File wingFile = new File( "A12_002.tif" );
+		
+		for ( int i = 0; i <= 12; i = i + 1 )
+		{
+			System.out.println( i );
+		}
 
+		System.exit( 0 );
+		final File wingFile = new File( "A12_002.tif" );
 		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
 		final ImagePlus wingImp = new ImagePlus( wingFile.getAbsolutePath() );
 
