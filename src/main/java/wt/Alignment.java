@@ -3,6 +3,7 @@ package wt;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -59,8 +60,11 @@ public class Alignment
 		model.fit( matches );
 		pWing.transform( model );
 
-		disp.exportImage( pTemplate.output, "homogenized template" );
-		disp.exportImage( pWing.output, "homogenized wing" );
+		// compute non-rigid alignment
+		new NonrigidAlignment( pTemplate.output, pWing.output );
+
+		//disp.exportImage( pTemplate.output, "homogenized template" );
+		//disp.exportImage( pWing.output, "homogenized wing" );
 	}
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
