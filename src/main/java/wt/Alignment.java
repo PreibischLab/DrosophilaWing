@@ -3,6 +3,7 @@ package wt;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -65,8 +66,9 @@ public class Alignment
 		final Transformation t = NonrigidAlignment.align( pWing.output, pTemplate.output, subSampling );
 		final Img< FloatType > out = NonrigidAlignment.transformTarget( pWing.output, t, subSampling );
 
-		disp.exportImage( pTemplate.output, "homogenized template" );
-		disp.exportImage( out, "homogenized wing" );
+		overlay( pTemplate.output, out ).show();
+		//disp.exportImage( pTemplate.output, "homogenized template" );
+		//disp.exportImage( out, "homogenized wing" );
 	}
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
@@ -104,6 +106,16 @@ public class Alignment
 		final float[] array = ((ArrayImg< FloatType, FloatArray >)img).update( null ).getCurrentStorageArray();
 
 		return new FloatProcessor( (int)img.dimension( 0 ), (int)img.dimension( 1 ), array );
+	}
+
+	public static ImagePlus overlay( final Img< FloatType > img1, final Img< FloatType > img2 )
+	{
+		final ImageStack stack = new ImageStack( (int)img1.dimension( 0 ), (int)img1.dimension( 1 ) );
+
+		stack.addSlice( wrap( img1 ) );
+		stack.addSlice( wrap( img2 ) );
+
+		return new ImagePlus( "Overlay", stack );
 	}
 
 	public static void main( String args[] ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
