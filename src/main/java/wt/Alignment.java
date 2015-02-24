@@ -3,7 +3,6 @@ package wt;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
-import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -23,6 +22,7 @@ import net.imglib2.util.Util;
 import spim.Threads;
 import spim.process.fusion.export.DisplayImage;
 import wt.tools.Mirror;
+import bunwarpj.Transformation;
 
 public class Alignment
 {
@@ -61,10 +61,12 @@ public class Alignment
 		pWing.transform( model );
 
 		// compute non-rigid alignment
-		new NonrigidAlignment( pTemplate.output, pWing.output );
+		final int subSampling = 2;
+		final Transformation t = NonrigidAlignment.align( pWing.output, pTemplate.output, subSampling );
+		final Img< FloatType > out = NonrigidAlignment.transformTarget( pWing.output, t, subSampling );
 
-		//disp.exportImage( pTemplate.output, "homogenized template" );
-		//disp.exportImage( pWing.output, "homogenized wing" );
+		disp.exportImage( pTemplate.output, "homogenized template" );
+		disp.exportImage( out, "homogenized wing" );
 	}
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
