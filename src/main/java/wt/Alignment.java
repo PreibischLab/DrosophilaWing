@@ -8,12 +8,10 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
 import java.io.File;
-import java.util.List;
 
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
-import mpicbg.models.PointMatch;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
@@ -21,14 +19,11 @@ import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import spim.Threads;
-import spim.process.fusion.export.DisplayImage;
 import wt.tools.Mirror;
 import bunwarpj.Transformation;
 
 public class Alignment
 {
-	final DisplayImage disp = new DisplayImage();
-	
 	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 		// find the initial alignment
@@ -56,19 +51,19 @@ public class Alignment
 		pWing.extend( 0.2f, true );
 
 		// transform pWing
-		final List< PointMatch > matches = transform1.createUpdatedMatches( Util.getArrayFromValue( offset, wing.numDimensions() ) );
 		final AffineModel2D model = new AffineModel2D();
-		model.fit( matches );
+		model.fit( transform1.createUpdatedMatches( Util.getArrayFromValue( offset, wing.numDimensions() ) ) );
 		pWing.transform( model );
 
 		// compute non-rigid alignment
 		final int subSampling = 2;
 		final Transformation t = NonrigidAlignment.align( pWing.output, pTemplate.output, subSampling );
-		final Img< FloatType > out = NonrigidAlignment.transformTarget( pWing.output, t, subSampling );
 
-		overlay( pTemplate.output, out ).show();
-		//disp.exportImage( pTemplate.output, "homogenized template" );
-		//disp.exportImage( out, "homogenized wing" );
+		// transform the original images
+		final Img< FloatType > wingAligned = NonrigidAlignment.transformAll( wing, transform1.model(), Util.getArrayFromValue( offset, wing.numDimensions() ), t, subSampling );
+		final Img< FloatType > wingGeneAligned = NonrigidAlignment.transformAll( wingGene, transform1.model(), Util.getArrayFromValue( offset, wing.numDimensions() ), t, subSampling );
+
+		overlay( template, wingAligned, wingGeneAligned ).show();
 	}
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
@@ -114,6 +109,17 @@ public class Alignment
 
 		stack.addSlice( wrap( img1 ) );
 		stack.addSlice( wrap( img2 ) );
+
+		return new ImagePlus( "Overlay", stack );
+	}
+
+	public static ImagePlus overlay( final Img< FloatType > img1, final Img< FloatType > img2, final Img< FloatType > img3 )
+	{
+		final ImageStack stack = new ImageStack( (int)img1.dimension( 0 ), (int)img1.dimension( 1 ) );
+
+		stack.addSlice( wrap( img1 ) );
+		stack.addSlice( wrap( img2 ) );
+		stack.addSlice( wrap( img3 ) );
 
 		return new ImagePlus( "Overlay", stack );
 	}

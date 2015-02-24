@@ -1,6 +1,8 @@
 package wt;
 
 import ij.ImagePlus;
+import mpicbg.models.AbstractAffineModel2D;
+import mpicbg.models.NoninvertibleModelException;
 import net.imglib2.Cursor;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
@@ -13,8 +15,50 @@ import bunwarpj.bUnwarpJ_;
 
 public class NonrigidAlignment
 {
+	public static Img< FloatType > transformAll( final Img< FloatType > img, final AbstractAffineModel2D< ? > model, final long[] offset, final Transformation t, final int subSampling )
+	{
+		final Img< FloatType > out = img.factory().create( img, img.firstElement() );
+
+		final Cursor< FloatType > cursor = out.localizingCursor();
+
+		final RealRandomAccess< FloatType > interpolate =
+				Views.interpolate( Views.extendZero( img ), new NLinearInterpolatorFactory< FloatType >() ).realRandomAccess();
+
+		final double[] l1 = new double[ out.numDimensions() ];
+		final float[] l2 = new float[ out.numDimensions() ];
+
+		final double s = subSampling == 0 ? 1 : Math.pow( 2, subSampling );
+
+		try
+		{
+
+			while ( cursor.hasNext() )
+			{
+				final FloatType f = cursor.next();
+
+				cursor.localize( l1 );
+
+				final double u = ( cursor.getFloatPosition( 0 ) + offset[ 0 ] ) / s;
+				final double v = ( cursor.getFloatPosition( 1 ) + offset[ 1 ] ) / s;
+
+				t.transform( u, v, l1, true );
+
+				l2[ 0 ] = (float)( l1[ 0 ] * s - offset[ 0 ] );
+				l2[ 1 ] = (float)( l1[ 1 ] * s - offset[ 1 ] );
+
+				model.applyInverseInPlace( l2 );
+
+				interpolate.setPosition( l2 );
+
+				f.set( interpolate.get() );
+			}
+		} 
+		catch (NoninvertibleModelException e) { e.printStackTrace(); }
+
+		return out;
+	}
+
 	/**
-	 * 
 	 * @param img - the target image (to be transformed)
 	 * @param t - the Transformation
 	 * @param subSampling - image subsampling factor (from 0 to 7, representing 2^0=1 to 2^7 = 128)

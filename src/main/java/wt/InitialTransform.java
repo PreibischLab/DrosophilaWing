@@ -15,7 +15,6 @@ import mpicbg.models.AbstractModel;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
-import mpicbg.models.RigidModel2D;
 import mpicbg.models.SimilarityModel2D;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.real.FloatType;
