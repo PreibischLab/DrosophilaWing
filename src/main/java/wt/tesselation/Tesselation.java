@@ -288,9 +288,9 @@ public class Tesselation
 			drawArea( mask, search.randomAccessible, img );
 			//drawOverlay( imp, locations.values() );
 			
-			if ( iteration % 10000 == 0 )
+			if ( iteration % 100000 == 0 )
 			{
-				IJ.log( "iteration: " + iteration );
+				IJ.log( "iteration: " + iteration + "\t" + errorArea + "\t" + errorCirc + "\t" + minError + "\t" + smallestSegment( search.realInterval ).area() + "\t" + largestSegment( search.realInterval ).area() );
 				for ( final RealPoint rp : locations.values() )
 					IJ.log( Util.printCoordinates( rp ) );
 			}
