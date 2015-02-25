@@ -4,6 +4,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.io.FileSaver;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -24,6 +25,8 @@ import bunwarpj.Transformation;
 
 public class Alignment
 {
+	public ImagePlus aligned = null;
+
 	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 		// find the initial alignment
@@ -63,8 +66,10 @@ public class Alignment
 		final Img< FloatType > wingAligned = NonrigidAlignment.transformAll( wing, transform1.model(), Util.getArrayFromValue( offset, wing.numDimensions() ), t, subSampling );
 		final Img< FloatType > wingGeneAligned = NonrigidAlignment.transformAll( wingGene, transform1.model(), Util.getArrayFromValue( offset, wing.numDimensions() ), t, subSampling );
 
-		overlay( template, wingAligned, wingGeneAligned ).show();
+		this.aligned = overlay( wingAligned, wingGeneAligned );
 	}
+
+	public ImagePlus getAlignedImage() { return aligned; }
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
 	{
@@ -130,6 +135,7 @@ public class Alignment
 
 		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
 		final File wingFile = new File( "A12_002.tif" );
+		final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() - 4 ) + ".aligned.zip" );
 		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
 		final ImagePlus wingImp = new ImagePlus( wingFile.getAbsolutePath() );
 
@@ -137,6 +143,9 @@ public class Alignment
 		final Img< FloatType > wing = convert( wingImp, 0 );
 		final Img< FloatType > wingGene = convert( wingImp, 1 );
 
-		new Alignment( template, wing, wingGene );
+		final Alignment alignment = new Alignment( template, wing, wingGene );
+
+		final ImagePlus aligned = alignment.getAlignedImage();
+		new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
 	}
 }
