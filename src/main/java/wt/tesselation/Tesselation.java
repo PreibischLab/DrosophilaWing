@@ -54,7 +54,7 @@ public class Tesselation
 		
 		final int targetArea = 200;
 
-		renderVoronoi( segments.get( 3 ), gene.factory().create( gene, gene.firstElement() ), targetArea );
+		renderVoronoi( segments.get( 0 ), gene.factory().create( gene, gene.firstElement() ), targetArea );
 	}
 
 	protected static class Search
@@ -147,7 +147,7 @@ public class Tesselation
 
 			if ( optArea )
 			{
-				knearest = 5;
+				knearest = 4;
 
 				if ( iteration % 3 == 0 )
 				{
@@ -167,7 +167,7 @@ public class Tesselation
 			}
 			else
 			{
-				knearest = 5;
+				knearest = 4;
 
 				if ( iteration % 3 == 0 )
 				{
