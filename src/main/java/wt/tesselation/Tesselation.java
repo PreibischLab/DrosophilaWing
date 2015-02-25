@@ -18,6 +18,11 @@ import java.util.List;
 import java.util.Random;
 
 import wt.Alignment;
+import wt.tesselation.error.CircularityError;
+import wt.tesselation.error.Error;
+import wt.tesselation.error.QuadraticError;
+import wt.tesselation.pointupdate.PointUpdater;
+import wt.tesselation.pointupdate.SimplePointUpdater;
 import mpicbg.imglib.algorithm.scalespace.DifferenceOfGaussianPeak;
 import mpicbg.imglib.multithreading.SimpleMultiThreading;
 import net.imglib2.Interval;
@@ -195,38 +200,22 @@ public class Tesselation
 			s += " SELECTED: (area=" + next.area() + ", " + Util.printCoordinates( locations.get( next.id() ) ) + ", circularity^-1=" + next.invCircularity() + ")";
 
 			//System.out.println( s );
+			// 10	1341887.0	739.4910070763469	1563734.302122904	28	526
 
+			// backup all locations
+			final ArrayList< RealPoint > backup = new ArrayList< RealPoint >();
+			
+			for ( final RealPoint p : locations.values() )
+				backup.add( new RealPoint( p ) );
+			
 			// try to change the largest or the smallest
 			final RealPoint p = locations.get( next.id() );
 
-			final double xo = p.getDoublePosition( 0 );
-			final double yo = p.getDoublePosition( 1 );
+			final PointUpdater updater = new SimplePointUpdater();
 
-			/*
-			double minError, target;
-			Error e;
-			boolean storePixelsSearch;
-
-			if ( optArea )
-			{
-				minError = errorArea;
-				e = errorMetricArea;
-				storePixelsSearch = false;
-				target = targetArea;
-			}
-			else
-			{
-				minError = errorCirc;
-				e = errorMetricCirc;
-				storePixelsSearch = true;
-				target = targetCircle;
-			}
-			*/
-			
 			double minError = errorArea + 300*errorCirc;
-
-			double bestX = xo;
-			double bestY = yo;
+			double bestdx = 0;
+			double bestdy = 0;
 
 			double[] dist;
 			
@@ -238,42 +227,36 @@ public class Tesselation
 			for ( int i = 0; i < dist.length; ++i )
 				for ( int dir = 0; dir <= 1; ++dir )
 				{
-					double x = 0;
-					double y = 0;
-					
+					double dx = 0;
+					double dy = 0;
+
 					if ( dir == 0 )
-						x = dist[ i ];
+						dx = dist[ i ];
 					else
-						y = dist[ i ];
-					
-					double newX = xo + x;
-					double newY = yo + y;
-					
-					//if ( r.contains( newX, newY ) )
+						dy = dist[ i ];
+
+					updater.updatePoints( p, locations.values(), dx, dy );
+
+					update( mask, search, true );
+
+					final double errorA = errorMetricArea.computeError( search.realInterval, targetArea );
+					final double errorC = errorMetricCirc.computeError( search.realInterval, targetCircle );
+					final double errorTest = errorA + 300*errorC;
+
+					if ( errorTest < minError )
 					{
-						p.setPosition( newX, 0 );
-						p.setPosition( newY, 1 );
-
-						update( mask, search, true );
-
-						final double errorA = errorMetricArea.computeError( search.realInterval, targetArea );
-						final double errorC = errorMetricCirc.computeError( search.realInterval, targetCircle );
-						final double errorTest = errorA + 300*errorC;
-
-						if ( errorTest < minError )
-						{
-							minError = errorTest;
-							bestX = newX;
-							bestY = newY;
-						}
+						minError = errorTest;
+						bestdx = dx;
+						bestdy = dy;
 					}
+					
+					// restore positions
+					int j = 0;
+					for ( final RealPoint rp : locations.values() )
+						rp.setPosition( backup.get( j++ ) );
 				}
 
-			p.setPosition( bestX, 0 );
-			p.setPosition( bestY, 1 );
-
-			// errorArea = minError;
-
+			updater.updatePoints( p, locations.values(), bestdx, bestdy );
 			update( mask, search, storePixels );
 
 			errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
