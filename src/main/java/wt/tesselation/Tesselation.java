@@ -1,18 +1,24 @@
 package wt.tesselation;
 
+import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
 import ij.io.Opener;
 
+import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
 import wt.Alignment;
+import mpicbg.imglib.algorithm.scalespace.DifferenceOfGaussianPeak;
 import mpicbg.imglib.multithreading.SimpleMultiThreading;
 import net.imglib2.Interval;
 import net.imglib2.IterableRealInterval;
@@ -280,10 +286,38 @@ public class Tesselation
 			
 			// update the drawing
 			drawArea( mask, search.randomAccessible, img );
+			//drawOverlay( imp, locations.values() );
+			
+			if ( iteration % 10000 == 0 )
+			{
+				IJ.log( "iteration: " + iteration );
+				for ( final RealPoint rp : locations.values() )
+					IJ.log( Util.printCoordinates( rp ) );
+			}
 			imp.updateAndDraw();
 		}
 		while ( errorArea > 0 );
 
+	}
+
+	protected final static void drawOverlay( final ImagePlus imp, final Collection< RealPoint > points )
+	{
+		Overlay o = imp.getOverlay();
+		
+		if ( o == null )
+		{
+			o = new Overlay();
+			imp.setOverlay( o );
+		}
+		
+		o.clear();
+		
+		for ( final RealPoint p : points )
+		{
+			final OvalRoi or = new OvalRoi( Util.round( p.getFloatPosition( 0 ) - 1 ), Util.round( p.getFloatPosition( 1 ) - 1 ), 3, 3 );
+			or.setStrokeColor( Color.red );
+			o.add( or );
+		}
 	}
 
 	final private static Segment maxInvCircularSegment( final Iterable< Segment > segmentMap )
