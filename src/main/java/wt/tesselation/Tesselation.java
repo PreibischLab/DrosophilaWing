@@ -67,42 +67,6 @@ public class Tesselation
 		renderVoronoi( segments.get( 0 ), gene.factory().create( gene, gene.firstElement() ), targetArea );
 	}
 
-	protected static class Search
-	{
-		// point list
-		final IterableRealInterval< Segment > realInterval;
-
-		// the factory
-		final NearestNeighborSearchInterpolatorFactory< Segment > factory = new NearestNeighborSearchInterpolatorFactory< Segment >();
-
-		// for searching
-		KDTree< Segment > kdTree;
-
-		// using nearest neighbor search we will be able to return a value an any position in space
-		NearestNeighborSearch< Segment > search;
-
-		// make it into RealRandomAccessible using nearest neighbor search
-		RealRandomAccessible< Segment > realRandomAccessible;
-
-		// convert it into a RandomAccessible which can be displayed
-		RandomAccessible< Segment > randomAccessible;
-
-		public Search( IterableRealInterval< Segment > realInterval )
-		{
-			this.realInterval = realInterval;
-
-			update();
-		}
-
-		public void update()
-		{
-			this.kdTree = new KDTree< Segment > ( realInterval );
-			this.search = new NearestNeighborSearchOnKDTree< Segment >( kdTree );
-			this.realRandomAccessible = Views.interpolate( search, factory );
-			this.randomAccessible = Views.raster( realRandomAccessible );
-		}
-	}
-
 	public void renderVoronoi( final PolygonRoi r, final Img< FloatType > img, final int targetArea )
 	{
 		// a mask of all pixels within the area (also the area)
