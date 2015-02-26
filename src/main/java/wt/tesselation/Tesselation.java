@@ -6,6 +6,7 @@ import ij.ImagePlus;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
+import ij.io.FileSaver;
 import ij.io.Opener;
 
 import java.awt.Color;
@@ -17,14 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import wt.Alignment;
-import wt.tesselation.error.CircularityError;
-import wt.tesselation.error.Error;
-import wt.tesselation.error.QuadraticError;
-import wt.tesselation.pointupdate.PointUpdater;
-import wt.tesselation.pointupdate.SimplePointUpdater;
-import mpicbg.imglib.algorithm.scalespace.DifferenceOfGaussianPeak;
-import mpicbg.imglib.multithreading.SimpleMultiThreading;
 import net.imglib2.Interval;
 import net.imglib2.IterableRealInterval;
 import net.imglib2.KDTree;
@@ -43,6 +36,12 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
+import wt.Alignment;
+import wt.tesselation.error.CircularityError;
+import wt.tesselation.error.Error;
+import wt.tesselation.error.QuadraticError;
+import wt.tesselation.pointupdate.DistancePointUpdater;
+import wt.tesselation.pointupdate.PointUpdater;
 
 public class Tesselation
 {
@@ -200,6 +199,18 @@ public class Tesselation
 			s += " SELECTED: (area=" + next.area() + ", " + Util.printCoordinates( locations.get( next.id() ) ) + ", circularity^-1=" + next.invCircularity() + ")";
 
 			//System.out.println( s );
+			/*
+			 * 1	1927549.0	720.6955331994182	2143757.6599598257	16	585	96.0	0
+				2	1855031.0	722.3261188329318	2071728.8356498796	16	572	-16.0	1
+				3	1751531.0	722.1560726261263	1968177.821787838	16	559	-32.0	0
+				4	1675501.0	724.5754088593773	1892873.6226578131	16	559	32.0	0
+				5	1619769.0	723.9701343373135	1836960.040301194	21	526	16.0	1
+				6	1574443.0	729.2870861810584	1793229.1258543176	21	526	32.0	0
+				7	1495057.0	743.1429505560124	1717999.8851668036	28	526	32.0	1
+				8	1419353.0	731.2564717569448	1638729.9415270835	28	526	-32.0	0
+				9	1394025.0	731.772070615251	1613556.6211845754	28	526	-32.0	0
+				10	1341887.0	739.4910070763469	1563734.302122904	28	526	32.0	1
+			 */
 			// 10	1341887.0	739.4910070763469	1563734.302122904	28	526
 
 			// backup all locations
@@ -211,52 +222,89 @@ public class Tesselation
 			// try to change the largest or the smallest
 			final RealPoint p = locations.get( next.id() );
 
-			final PointUpdater updater = new SimplePointUpdater();
+			//final PointUpdater updater = new DistancePointUpdater( 20 / Math.max( 1, ( iteration / 100 ) ) );// SimplePointUpdater();
 
 			double minError = errorArea + 300*errorCirc;
 			double bestdx = 0;
 			double bestdy = 0;
-
-			double[] dist;
+			int bestDir = -1;
+			double bestDist = -1;
+			double bestSigma = -1;
 			
-			if ( iteration < 1000 )
-				dist = new double[]{ -96, -64, -32, -16, -8, -4, -2, -1, 1, 2, 4, 8, 16, 32, 64, 96 };
-			else
-				dist = new double[]{ -1, -0.75, -0.5, -0.25, -0.1, 0.1, 0.25, 0.5, 0.75, 1 };
+			double[] dist = new double[]{ -64, -32, -16, -8, -4, 4, 8, 16, 32, 64 };
+			double[] sigmas = new double[]{ 40, 20, 10, 5, 0 };
 
 			for ( int i = 0; i < dist.length; ++i )
-				for ( int dir = 0; dir <= 1; ++dir )
-				{
-					double dx = 0;
-					double dy = 0;
+				dist[ i ] /= Math.max( 0.1, ( iteration / (5*100.0) ) );
 
-					if ( dir == 0 )
-						dx = dist[ i ];
-					else
-						dy = dist[ i ];
+			for ( int i = 0; i < sigmas.length; ++i )
+				sigmas[ i ] /= Math.max( 1, ( iteration / (5*1000.0) ) );
 
-					updater.updatePoints( p, locations.values(), dx, dy );
+			if ( iteration % (5*100) == 1 )
+			{
+				String t = "it: " + iteration + ": ";
+				for ( int i = 0; i < dist.length; ++i )
+					t += dist[ i ] + ", ";
+				IJ.log( t );
 
-					update( mask, search, true );
+				t = "it: " + iteration + ": ";
+				for ( int i = 0; i < sigmas.length; ++i )
+					t += sigmas[ i ] + ", ";
+				IJ.log( t );
+			}
+			//if ( iteration < 1000 )
+			//	dist = new double[]{ -96, -64, -32, -16, -8, -4, -2, -1, 1, 2, 4, 8, 16, 32, 64, 96 };
+			//else
+			//	dist = new double[]{ -1, -0.75, -0.5, -0.25, -0.1, 0.1, 0.25, 0.5, 0.75, 1 };
 
-					final double errorA = errorMetricArea.computeError( search.realInterval, targetArea );
-					final double errorC = errorMetricCirc.computeError( search.realInterval, targetCircle );
-					final double errorTest = errorA + 300*errorC;
+			
+			
+			//for ( int si = 0; si < sigmas.length; ++si )
+			{
+				int si = rnd.nextInt( sigmas.length );
+				final PointUpdater updater = new DistancePointUpdater( sigmas[ si ] );
 
-					if ( errorTest < minError )
+				for ( int i = 0; i < dist.length; ++i )
+					for ( int dir = 0; dir <= 1; ++dir )
 					{
-						minError = errorTest;
-						bestdx = dx;
-						bestdy = dy;
+						double dx = 0;
+						double dy = 0;
+	
+						if ( dir == 0 )
+							dx = dist[ i ];
+						else
+							dy = dist[ i ];
+	
+						updater.updatePoints( p, locations.values(), dx, dy );
+	
+						update( mask, search, true );
+	
+						final double errorA = errorMetricArea.computeError( search.realInterval, targetArea );
+						final double errorC = errorMetricCirc.computeError( search.realInterval, targetCircle );
+						final double errorTest = errorA + 300*errorC;
+	
+						if ( errorTest < minError )
+						{
+							minError = errorTest;
+							bestdx = dx;
+							bestdy = dy;
+							bestDir = dir;
+							bestDist = dist[ i ];
+							bestSigma = sigmas[ si ];
+						}
+						
+						// restore positions
+						int j = 0;
+						for ( final RealPoint rp : locations.values() )
+							rp.setPosition( backup.get( j++ ) );
 					}
-					
-					// restore positions
-					int j = 0;
-					for ( final RealPoint rp : locations.values() )
-						rp.setPosition( backup.get( j++ ) );
-				}
+			}
 
-			updater.updatePoints( p, locations.values(), bestdx, bestdy );
+			if ( bestSigma > 0 )
+			{
+				final PointUpdater updater = new DistancePointUpdater( bestSigma );
+				updater.updatePoints( p, locations.values(), bestdx, bestdy );
+			}
 			update( mask, search, storePixels );
 
 			errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
@@ -265,11 +313,16 @@ public class Tesselation
 			//System.out.println( "NEW: (area=" + next.area() + ", " + Util.printCoordinates( locations.get( next.id() ) ) );
 			//System.out.println( "Area=" + errorArea + " Circ=" + errorCirc );
 			
-			System.out.println( iteration + "\t" + errorArea + "\t" + errorCirc + "\t" + minError + "\t" + smallestSegment( search.realInterval ).area() + "\t" + largestSegment( search.realInterval ).area() );
+			if ( bestDir != -1 )
+			{
+				System.out.println( iteration + "\t" + errorArea + "\t" + errorCirc + "\t" + minError + "\t" + smallestSegment( search.realInterval ).area() + "\t" + largestSegment( search.realInterval ).area() + "\t" + bestDist + "\t" + bestDir + "\t" + bestSigma );
 			
-			// update the drawing
-			drawArea( mask, search.randomAccessible, img );
-			//drawOverlay( imp, locations.values() );
+				// update the drawing
+				drawArea( mask, search.randomAccessible, img );
+				//drawOverlay( imp, locations.values() );
+				imp.updateAndDraw();
+				new FileSaver( imp ).saveAsZip( "movie/voronoi_" + iteration + ".zip" );
+			}
 			
 			if ( iteration % 100000 == 0 )
 			{
@@ -277,7 +330,6 @@ public class Tesselation
 				for ( final RealPoint rp : locations.values() )
 					IJ.log( Util.printCoordinates( rp ) );
 			}
-			imp.updateAndDraw();
 		}
 		while ( errorArea > 0 );
 
