@@ -2,6 +2,7 @@ package wt.tesselation;
 
 import ij.gui.Roi;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,13 +48,22 @@ public class TesselationThread implements Runnable
 
 	public TesselationThread( final int id, final Roi r, final Img< FloatType > img, final int targetArea )
 	{
+		this( id, r, img, targetArea, null );
+	}
+
+	public TesselationThread( final int id, final Roi r, final Img< FloatType > img, final int targetArea, final File currentState )
+	{
 		this.targetArea = targetArea;
 
 		this.mask = Tesselation.makeMask( img, r );
 		this.area = mask.length;
 		this.numPoints = area / targetArea;
 		this.locationMap = new HashMap< Integer, RealPoint >();
-		this.search = new Search( Tesselation.createRandomPoints( img, numPoints, r, locationMap ) );
+		if ( currentState == null )
+			this.search = new Search( Tesselation.createRandomPoints( img, numPoints, r, locationMap ) );
+		else
+			this.search = new Search( Tesselation.loadPoints( currentState, img.numDimensions(), numPoints, locationMap ) );
+
 		this.rnd = new Random( 1353 );
 		this.errorMetricArea = new QuadraticError();
 		this.errorMetricCirc = new CircularityError();
@@ -82,7 +92,12 @@ public class TesselationThread implements Runnable
 	{
 		return ( error / (double)numPoints() ) * 169.0; // error relative to the original dataset I tested on so the function works
 	}
-	
+
+	protected double getFactor( final double error )
+	{
+		return -0.23948 + 13.88349*Math.exp(-(Math.log10( error )-5.24347)/0.05411) + 2.69144*Math.exp(-(Math.log10( error )-5.24347)/0.44634);
+	}
+
 	public int area() { return area; }
 	public int numPoints() { return numPoints; }
 	public int targetArea() { return targetArea; }
@@ -167,7 +182,7 @@ public class TesselationThread implements Runnable
 		double[] dist = new double[]{ -64, -32, -16, -8, -4, 4, 8, 16, 32, 64 };
 		double[] sigmas = new double[]{ 40, 20, 10, 5, 0 };
 
-		final double factor = -0.23948 + 13.88349*Math.exp(-(Math.log10( error )-5.24347)/0.05411) + 2.69144*Math.exp(-(Math.log10( error )-5.24347)/0.44634);
+		final double factor = getFactor( error );
 		
 		for ( int i = 0; i < dist.length; ++i )
 			dist[ i ] /= Math.max( 0.1, factor );

@@ -11,7 +11,9 @@ import ij.io.FileSaver;
 import ij.io.Opener;
 
 import java.awt.Color;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
@@ -363,8 +366,13 @@ public class Tesselation
 		}
 	}
 
-	final protected static void drawId( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img )
+	final protected static void drawId( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img, final Iterable< Segment > segmentMap )
 	{
+		float maxId = 0;
+
+		for ( final Segment s : segmentMap )
+			maxId = Math.max( s.id(), maxId );
+
 		final RandomAccess< Segment > ra = randomAccessible.randomAccess();
 		final RandomAccess< FloatType > ri = img.randomAccess();
 	
@@ -373,7 +381,7 @@ public class Tesselation
 			ra.setPosition( ml );
 			ri.setPosition( ml );
 
-			ri.get().set( ra.get().id() );
+			ri.get().set( ra.get().id() / maxId );
 		}
 	}
 
@@ -454,7 +462,57 @@ public class Tesselation
 		}
 		
 		return elements;
-}
+	}
+
+	protected final static RealPointSampleList< Segment > loadPoints( final File pointFile, final int numDimensions, final int numPoints, final HashMap< Integer, RealPoint > locations )
+	{
+		// a list of Samples with coordinates
+		RealPointSampleList< Segment > elements = new RealPointSampleList< Segment >( numDimensions );
+
+		final BufferedReader in = TextFileAccess.openFileRead( pointFile );
+
+		int count = 0;
+
+		try
+		{
+			while ( in.ready() )
+			{
+				final String[] line = in.readLine().trim().split( "\t" );
+				final int id = Integer.parseInt( line[ 0 ] );
+	
+				final double[] coordinate = new double[ numDimensions ];
+	
+				for ( int d = 0; d < numDimensions; ++d )
+					coordinate[ d ] = Double.parseDouble( line[ d + 1 ] );
+	
+				final RealPoint point = new RealPoint( numDimensions );
+	
+				point.setPosition( coordinate );
+	
+				final Segment s = new Segment( id );
+				elements.add( point, s );
+				++count;
+	
+				if ( locations != null )
+					locations.put( s.id(), point );
+			}
+
+		
+			in.close();
+		}
+		catch ( IOException e )
+		{
+			e.printStackTrace();
+			throw new RuntimeException( "Failed to open file '" + pointFile.getAbsolutePath() + "':" + e );
+		}
+
+		if ( count != numPoints )
+			throw new RuntimeException( "Wrong number of points, should be " + numPoints + ", but is " + count );
+
+		System.out.println( "Loaded " + numPoints + " points." );
+
+		return elements;
+	}
 
 	public static RealPointSampleList< IntType > createEquallySpacedPoints( RealInterval interval, int numPointsX, int numPointsY, final PolygonRoi r )
 	{
