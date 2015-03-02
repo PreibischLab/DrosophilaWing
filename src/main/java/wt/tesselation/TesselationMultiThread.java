@@ -176,7 +176,7 @@ public class TesselationMultiThread
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
 		//for ( int i = 0; i < segments.size(); ++i )
-	//		currentState.add( new File( "segment_" + i + ".points.txt" ) );
+		//	currentState.add( new File( "segment_" + i + ".points.txt" ) );
 
 		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}
