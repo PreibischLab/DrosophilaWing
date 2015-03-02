@@ -568,6 +568,7 @@ public class Tesselation
 		return segments;
 	}
 
+	// simple method result: 1830212	19823.0	542.6330505431165	182612.91516293495	172	223
 	public static void main( String[] args )
 	{
 		new ImageJ();
