@@ -6,6 +6,7 @@ import ij.ImagePlus;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
+import ij.gui.Roi;
 import ij.io.FileSaver;
 import ij.io.Opener;
 
@@ -19,23 +20,17 @@ import java.util.List;
 import java.util.Random;
 
 import net.imglib2.Interval;
-import net.imglib2.IterableRealInterval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RealInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPointSampleList;
-import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
-import net.imglib2.interpolation.neighborsearch.NearestNeighborSearchInterpolatorFactory;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
-import net.imglib2.neighborsearch.NearestNeighborSearch;
-import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
-import net.imglib2.view.Views;
 import wt.Alignment;
 import wt.tesselation.error.CircularityError;
 import wt.tesselation.error.Error;
@@ -45,7 +40,7 @@ import wt.tesselation.pointupdate.PointUpdater;
 
 public class Tesselation
 {
-	public Tesselation( final Img< FloatType > wing, final Img< FloatType > gene, final List< PolygonRoi > segments )
+	public Tesselation( final Img< FloatType > wing, final Img< FloatType > gene, final List< Roi > segments )
 	{
 		/*
 		ImagePlus wingImp = new ImagePlus( "wing", Alignment.wrap( wing ) );
@@ -67,7 +62,7 @@ public class Tesselation
 		renderVoronoi( segments.get( 0 ), gene.factory().create( gene, gene.firstElement() ), targetArea );
 	}
 
-	public void renderVoronoi( final PolygonRoi r, final Img< FloatType > img, final int targetArea )
+	public void renderVoronoi( final Roi r, final Img< FloatType > img, final int targetArea )
 	{
 		// a mask of all pixels within the area (also the area)
 		final int[][] mask = makeMask( img, r );
@@ -89,14 +84,11 @@ public class Tesselation
 
 		Random rnd = new Random( 1353 );
 
-		// rememeber for each segment which pixels are part of it
-		final boolean storePixels = true;
-
 		Error errorMetricArea = new QuadraticError();
 		Error errorMetricCirc = new CircularityError();
 
 		// initial compute areas
-		update( mask, search, storePixels );
+		update( mask, search );
 
 		// initial compute simple statistics
 		final double targetCircle = 0;
@@ -114,68 +106,29 @@ public class Tesselation
 				optArea = true;
 			else
 				optArea = false;
-			
+
 			Segment next;
-			String s = "";
-			int knearest;
+			int knearest = 4;
 
 			if ( optArea )
 			{
-				knearest = 4;
-
 				if ( iteration % 3 == 0 )
-				{
 					next = randomSegment( search.realInterval, rnd );
-					s += "Random (area)";
-				}
 				else if ( iteration % 3 == 1 )
-				{
 					next = smallestSegment( search.realInterval );
-					s += "Smallest";
-				}
 				else
-				{
 					next = largestSegment( search.realInterval );
-					s += "Largest";
-				}
 			}
 			else
 			{
-				knearest = 4;
-
 				if ( iteration % 3 == 0 )
-				{
 					next = randomSegment( search.realInterval, rnd );
-					s += "Random (circ)";
-				}
 				else
-				{
 					next = maxInvCircularSegment( search.realInterval );
-					s += "MaxInvCirc";
-				}
 			}
-
-			s += " (area=" + next.area() + ", " + Util.printCoordinates( locations.get( next.id() ) ) + ", circularity^-1=" + next.invCircularity() + ")";
 
 			// select a close neighbor to the smallest, largest or random segment
 			next = neighborSegment( locations.get( next.id() ), search.kdTree, knearest, rnd );
-
-			s += " SELECTED: (area=" + next.area() + ", " + Util.printCoordinates( locations.get( next.id() ) ) + ", circularity^-1=" + next.invCircularity() + ")";
-
-			//System.out.println( s );
-			/*
-			 * 1	1927549.0	720.6955331994182	2143757.6599598257	16	585	96.0	0
-				2	1855031.0	722.3261188329318	2071728.8356498796	16	572	-16.0	1
-				3	1751531.0	722.1560726261263	1968177.821787838	16	559	-32.0	0
-				4	1675501.0	724.5754088593773	1892873.6226578131	16	559	32.0	0
-				5	1619769.0	723.9701343373135	1836960.040301194	21	526	16.0	1
-				6	1574443.0	729.2870861810584	1793229.1258543176	21	526	32.0	0
-				7	1495057.0	743.1429505560124	1717999.8851668036	28	526	32.0	1
-				8	1419353.0	731.2564717569448	1638729.9415270835	28	526	-32.0	0
-				9	1394025.0	731.772070615251	1613556.6211845754	28	526	-32.0	0
-				10	1341887.0	739.4910070763469	1563734.302122904	28	526	32.0	1
-			 */
-			// 10	1341887.0	739.4910070763469	1563734.302122904	28	526
 
 			// backup all locations
 			final ArrayList< RealPoint > backup = new ArrayList< RealPoint >();
@@ -241,7 +194,7 @@ public class Tesselation
 	
 						updater.updatePoints( p, locations.values(), dx, dy );
 	
-						update( mask, search, true );
+						update( mask, search );
 	
 						final double errorA = errorMetricArea.computeError( search.realInterval, targetArea );
 						final double errorC = errorMetricCirc.computeError( search.realInterval, targetCircle );
@@ -269,14 +222,11 @@ public class Tesselation
 				final PointUpdater updater = new DistancePointUpdater( bestSigma );
 				updater.updatePoints( p, locations.values(), bestdx, bestdy );
 			}
-			update( mask, search, storePixels );
+			update( mask, search );
 
 			errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
 			errorCirc = errorMetricCirc.computeError( search.realInterval, targetCircle );
 
-			//System.out.println( "NEW: (area=" + next.area() + ", " + Util.printCoordinates( locations.get( next.id() ) ) );
-			//System.out.println( "Area=" + errorArea + " Circ=" + errorCirc );
-			
 			if ( bestDir != -1 )
 			{
 				System.out.println( iteration + "\t" + errorArea + "\t" + errorCirc + "\t" + minError + "\t" + smallestSegment( search.realInterval ).area() + "\t" + largestSegment( search.realInterval ).area() + "\t" + bestDist + "\t" + bestDir + "\t" + bestSigma );
@@ -284,6 +234,7 @@ public class Tesselation
 				// update the drawing
 				drawArea( mask, search.randomAccessible, img );
 				//drawOverlay( imp, locations.values() );
+
 				imp.updateAndDraw();
 				new FileSaver( imp ).saveAsZip( "movie/voronoi_" + iteration + ".zip" );
 			}
@@ -319,7 +270,7 @@ public class Tesselation
 		}
 	}
 
-	final private static Segment maxInvCircularSegment( final Iterable< Segment > segmentMap )
+	final protected static Segment maxInvCircularSegment( final Iterable< Segment > segmentMap )
 	{
 		Segment maxInvCircS = segmentMap.iterator().next();
 		double maxInvCirc = maxInvCircS.invCircularity();
@@ -338,7 +289,7 @@ public class Tesselation
 		return maxInvCircS;
 	}
 
-	final private static Segment smallestSegment( final Iterable< Segment > segmentMap )
+	final protected static Segment smallestSegment( final Iterable< Segment > segmentMap )
 	{
 		Segment min = segmentMap.iterator().next();
 
@@ -358,14 +309,14 @@ public class Tesselation
 	 * @param rnd
 	 * @return
 	 */
-	final private static Segment neighborSegment( final RealPoint location, final KDTree< Segment > segmentTree, final int k, final Random rnd )
+	final protected static Segment neighborSegment( final RealPoint location, final KDTree< Segment > segmentTree, final int k, final Random rnd )
 	{
 		final KNearestNeighborSearchOnKDTree< Segment > s = new KNearestNeighborSearchOnKDTree< Segment >( segmentTree, k );
 		s.search( location );
 		return s.getSampler( rnd.nextInt( k ) ).get();
 	}
 
-	final private static Segment largestSegment( final Iterable< Segment > segmentMap )
+	final protected static Segment largestSegment( final Iterable< Segment > segmentMap )
 	{
 		Segment max = segmentMap.iterator().next();
 
@@ -376,7 +327,7 @@ public class Tesselation
 		return max;
 	}
 
-	final private static Segment randomSegment( final Iterable< Segment > segmentMap, final Random rnd )
+	final protected static Segment randomSegment( final Iterable< Segment > segmentMap, final Random rnd )
 	{
 		final ArrayList< Segment > l = new ArrayList<Segment>();
 		
@@ -386,7 +337,7 @@ public class Tesselation
 		return l.get( rnd.nextInt( l.size() ) );
 	}
 
-	final private static void update( final int[][] mask, final Search search, final boolean storePixels )
+	final protected static void update( final int[][] mask, final Search search )
 	{
 		// update the new coordinates for the pointlist
 		search.update();
@@ -396,18 +347,16 @@ public class Tesselation
 		for ( final Segment s : search.realInterval )
 		{
 			s.setArea( 0 );
-
-			if ( storePixels )
-				s.pixels().clear();
+			s.pixels().clear();
 		}
 
 		for ( final int[] ml : mask )
 		{
 			ra.setPosition( ml );
-			ra.get().incArea();
 
-			if ( storePixels )
-				ra.get().pixels().add( ml );
+			final Segment s = ra.get();
+			s.incArea();
+			s.pixels().add( ml );
 		}
 	}
 
@@ -439,7 +388,7 @@ public class Tesselation
 		}
 	}
 
-	public static int[][] makeMask( final Interval interval, final PolygonRoi r )
+	protected final static int[][] makeMask( final Interval interval, final Roi r )
 	{
 		int numElements = 0;
 
@@ -465,7 +414,7 @@ public class Tesselation
 	}
 
 
-	public static RealPointSampleList< Segment > createRandomPoints( RealInterval interval, int numPoints, final PolygonRoi r, final HashMap< Integer, RealPoint > locations )
+	protected final static RealPointSampleList< Segment > createRandomPoints( RealInterval interval, int numPoints, final Roi r, final HashMap< Integer, RealPoint > locations )
 	{
 		// the number of dimensions
 		int numDimensions = interval.numDimensions();
@@ -539,13 +488,13 @@ public class Tesselation
 		return elements;
 }
 
-	public static List< PolygonRoi > loadROIs( final List< File > segmentFiles )
+	public static List< Roi > loadROIs( final List< File > segmentFiles )
 	{
-		final ArrayList< PolygonRoi > segments = new ArrayList< PolygonRoi >();
+		final ArrayList< Roi > segments = new ArrayList< Roi >();
 		final Opener o = new Opener();
 
 		for ( final File file : segmentFiles )
-			segments.add( (PolygonRoi)o.openRoi( file.getAbsolutePath() ) );
+			segments.add( (Roi)o.openRoi( file.getAbsolutePath() ) );
 
 		return segments;
 	}
@@ -579,7 +528,7 @@ public class Tesselation
 		final Img< FloatType > wing = Alignment.convert( wingImp, 0 );
 		final Img< FloatType > gene = Alignment.convert( wingImp, 1 );
 
-		final List< PolygonRoi > segments = loadROIs( assembleSegments( roiDirectory ) );
+		final List< Roi > segments = loadROIs( assembleSegments( roiDirectory ) );
 
 		new Tesselation( wing, gene, segments );
 	}
