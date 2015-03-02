@@ -1,4 +1,6 @@
-package wt.tesselation;
+package wt.tesselation.error;
+
+import wt.tesselation.Segment;
 
 public class CircularityError implements Error
 {
