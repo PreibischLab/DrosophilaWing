@@ -1,13 +1,12 @@
 package wt.tesselation;
 
-import ij.ImagePlus;
-import ij.gui.PolygonRoi;
-import ij.io.FileSaver;
+import ij.gui.Roi;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import net.imglib2.IterableRealInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.real.FloatType;
@@ -19,39 +18,37 @@ import wt.tesselation.pointupdate.PointUpdater;
 
 public class TesselationThread
 {
-	final PolygonRoi r;
-	final Img< FloatType > img;
-	final ImagePlus imp;
-	final int targetArea;
+	final private int targetArea;
 
-	final int[][] mask;
-	final int area;
-	final int numPoints;
-	final HashMap< Integer, RealPoint > locations;
-	final Search search;
-	final Random rnd;
-	final Error errorMetricArea;
-	final Error errorMetricCirc;
-	final double targetCircle;
+	final private int[][] mask;
+	final private int area;
+	final private int numPoints, id;
+	final private HashMap< Integer, RealPoint > locationMap;
+	final private Search search;
+	final private Random rnd;
+	final private Error errorMetricArea;
+	final private Error errorMetricCirc;
+	final private double targetCircle;
 
-	double errorArea, errorCirc;
-	int iteration;
+	private double errorArea, errorCirc, error;
+	private int iteration;
 
-	public TesselationThread( final PolygonRoi r, final Img< FloatType > img, final ImagePlus imp, final int targetArea )
+	private double lastDX, lastDY, lastDist, lastSigma;
+	private int lastDir, lastIteration;
+
+	public TesselationThread( final int id, final Roi r, final Img< FloatType > img, final int targetArea )
 	{
-		this.r = r;
-		this.img = img;
-		this.imp = imp;
 		this.targetArea = targetArea;
 
 		this.mask = Tesselation.makeMask( img, r );
 		this.area = mask.length;
 		this.numPoints = area / targetArea;
-		this.locations = new HashMap< Integer, RealPoint >();
-		this.search = new Search( Tesselation.createRandomPoints( img, numPoints, r, locations ) );
+		this.locationMap = new HashMap< Integer, RealPoint >();
+		this.search = new Search( Tesselation.createRandomPoints( img, numPoints, r, locationMap ) );
 		this.rnd = new Random( 1353 );
 		this.errorMetricArea = new QuadraticError();
 		this.errorMetricCirc = new CircularityError();
+		this.id = id;
 
 		// initial compute areas
 		Tesselation.update( mask, search );
@@ -60,10 +57,28 @@ public class TesselationThread
 		this.targetCircle = 0;
 		this.errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
 		this.errorCirc = errorMetricCirc.computeError( search.realInterval, targetCircle );
-
+		this.error = errorArea + 300*errorCirc;
 		this.iteration = 0;
 	}
 
+	public int id() { return id; }
+	public double error() { return error; }
+	public double errorCirc() { return errorCirc; }
+	public double errorArea() { return errorArea; }
+	public int iteration() { return iteration; }
+
+	public IterableRealInterval< Segment > pointList() { return search.realInterval; }
+	public Search search() { return search; }
+	public int[][] mask() { return mask; }
+	public HashMap< Integer, RealPoint > locationMap() { return locationMap; }
+
+	public double lastDX() { return lastDX; }
+	public double lastDY() { return lastDY; }
+	public int lastDir() { return lastDir; }
+	public double lastdDist() { return lastDist; }
+	public double lastdSigma() { return lastSigma; }
+	public int lastIteration() { return lastIteration; }
+	
 	/*
 		1	2020073.0	724.1660295533733	2237322.808866012	16	597	-40.0	0	5.0
 		2	2016975.0	731.9594495755372	2236562.834872661	16	678	40.0	0	5.0
@@ -97,18 +112,18 @@ public class TesselationThread
 			next = Tesselation.maxInvCircularSegment( search.realInterval );
 
 		// select a close neighbor to the smallest, largest or random segment
-		next = Tesselation.neighborSegment( locations.get( next.id() ), search.kdTree, knearest, rnd );
+		next = Tesselation.neighborSegment( locationMap.get( next.id() ), search.kdTree, knearest, rnd );
 
 		// backup all locations
 		final ArrayList< RealPoint > backup = new ArrayList< RealPoint >();
 		
-		for ( final RealPoint p : locations.values() )
+		for ( final RealPoint p : locationMap.values() )
 			backup.add( new RealPoint( p ) );
 		
 		// try to change the largest or the smallest
-		final RealPoint p = locations.get( next.id() );
+		final RealPoint p = locationMap.get( next.id() );
 
-		double minError = errorArea + 300*errorCirc;
+		double minError = error;
 		double bestdx = 0;
 		double bestdy = 0;
 		int bestDir = -1;
@@ -138,7 +153,7 @@ public class TesselationThread
 				else
 					dy = dist[ i ];
 
-				updater.updatePoints( p, locations.values(), dx, dy );
+				updater.updatePoints( p, locationMap.values(), dx, dy );
 
 				Tesselation.update( mask, search );
 
@@ -157,30 +172,30 @@ public class TesselationThread
 				
 				// restore positions
 				int j = 0;
-				for ( final RealPoint rp : locations.values() )
+				for ( final RealPoint rp : locationMap.values() )
 					rp.setPosition( backup.get( j++ ) );
 			}
 
 		// apply the best choice
 		if ( bestDir >= 0 )
-			updater.updatePoints( p, locations.values(), bestdx, bestdy );
+			updater.updatePoints( p, locationMap.values(), bestdx, bestdy );
 
 		// update the image, area, etc.
 		Tesselation.update( mask, search );
 
 		errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
 		errorCirc = errorMetricCirc.computeError( search.realInterval, targetCircle );
+		error = errorArea + 300*errorCirc;
 
 		if ( bestDir != -1 )
 		{
-			System.out.println( iteration + "\t" + errorArea + "\t" + errorCirc + "\t" + minError + "\t" + Tesselation.smallestSegment( search.realInterval ).area() + "\t" + Tesselation.largestSegment( search.realInterval ).area() + "\t" + bestDist + "\t" + bestDir + "\t" + sigma );
-		
-			// update the drawing
-			Tesselation.drawArea( mask, search.randomAccessible, img );
-			Tesselation.drawOverlay( imp, locations.values() );
+			lastDX = bestdx;
+			lastDY = bestdy;
+			lastDir = bestDir;
+			lastDist = bestDist;
+			lastSigma = sigma;
+			lastIteration = iteration;
 
-			imp.updateAndDraw();
-			new FileSaver( imp ).saveAsZip( "movie/voronoi_" + iteration + ".zip" );
 			return true;
 		}
 		else
