@@ -25,6 +25,11 @@ public class TesselationMultiThread
 {
 	public TesselationMultiThread( final Interval interval, final List< Roi > segments )
 	{
+		this( interval, segments, null );
+	}
+
+	public TesselationMultiThread( final Interval interval, final List< Roi > segments, final List< File > currentState )
+	{
 		final int targetArea = 200;
 
 		final Img< FloatType > img = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
@@ -37,11 +42,23 @@ public class TesselationMultiThread
 
 		for ( int i = 0; i < segments.size(); ++i )
 		{
-			final TesselationThread tt = new TesselationThread( i, segments.get( i ), img, targetArea );
+			final TesselationThread tt;
+
+			if ( currentState == null || currentState.size() != segments.size() )
+				tt = new TesselationThread( i, segments.get( i ), img, targetArea );
+			else
+			{
+				tt = new TesselationThread( i, segments.get( i ), img, targetArea, currentState.get( i ) );
+				Tesselation.drawArea( tt.mask(), tt.search().randomAccessible, img );
+			}
+
 			final Thread t = new Thread( tt );
-			
+
 			threads.add( new ValuePair< TesselationThread, Thread >( tt, t ) );
 		}
+
+		if ( currentState != null )
+			imp.updateAndDraw();
 
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
@@ -156,7 +173,12 @@ public class TesselationMultiThread
 
 		final List< Roi > segments = Tesselation.loadROIs( Tesselation.assembleSegments( roiDirectory ) );
 
-		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments );
+		// load existing state
+		final List< File > currentState = new ArrayList< File >();
+		//for ( int i = 0; i < segments.size(); ++i )
+		//	currentState.add( new File( "segment_" + i + ".points.txt" ) );
+
+		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}
 
 }
