@@ -95,8 +95,7 @@ public class TesselationMultiThread
 				{
 					final TesselationThread t = pair.getA();
 					
-					System.out.println(
-							t.id() + "\t" +
+					String s = 
 							t.iteration() + "\t" +
 							t.errorArea() + "\t" +
 							t.errorCirc() + "\t" +
@@ -105,7 +104,10 @@ public class TesselationMultiThread
 							Tesselation.largestSegment( t.pointList() ).area() + "\t" +
 							t.lastdDist() + "\t" +
 							t.lastDir() + "\t" +
-							t.lastdSigma() );
+							t.lastdSigma();
+
+					t.logFile().println( s );
+					System.out.println( t.id() + "\t" + s );
 
 					// update the drawing
 					Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
@@ -134,6 +136,9 @@ public class TesselationMultiThread
 					}
 					
 					out.close();
+
+					// write out after every 1000 iterations at least
+					pair.getA().logFile().flush();
 				}
 			}
 		}

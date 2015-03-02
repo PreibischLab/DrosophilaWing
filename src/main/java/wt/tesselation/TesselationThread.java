@@ -2,11 +2,13 @@ package wt.tesselation;
 
 import ij.gui.Roi;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.IterableRealInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.img.Img;
@@ -41,6 +43,8 @@ public class TesselationThread implements Runnable
 	private boolean lastIterationUpdated;
 	private boolean iterationFinished;
 
+	private PrintWriter logFile;
+
 	public TesselationThread( final int id, final Roi r, final Img< FloatType > img, final int targetArea )
 	{
 		this.targetArea = targetArea;
@@ -54,6 +58,7 @@ public class TesselationThread implements Runnable
 		this.errorMetricArea = new QuadraticError();
 		this.errorMetricCirc = new CircularityError();
 		this.id = id;
+		this.logFile = TextFileAccess.openFileWrite( "log_segment_" + id() + ".txt" );
 
 		// initial compute areas
 		Tesselation.update( mask, search );
@@ -86,6 +91,7 @@ public class TesselationThread implements Runnable
 	public double errorCirc() { return errorCirc; }
 	public double errorArea() { return errorArea; }
 	public int iteration() { return iteration; }
+	public PrintWriter logFile() { return logFile; }
 
 	public IterableRealInterval< Segment > pointList() { return search.realInterval; }
 	public Search search() { return search; }
