@@ -5,6 +5,7 @@ import ij.gui.Roi;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.imglib2.IterableRealInterval;
 import net.imglib2.RealPoint;
@@ -16,7 +17,7 @@ import wt.tesselation.error.QuadraticError;
 import wt.tesselation.pointupdate.DistancePointUpdater;
 import wt.tesselation.pointupdate.PointUpdater;
 
-public class TesselationThread
+public class TesselationThread implements Runnable
 {
 	final private int targetArea;
 
@@ -32,9 +33,13 @@ public class TesselationThread
 
 	private double errorArea, errorCirc, error;
 	private int iteration;
+	private AtomicBoolean runNextIteration;
+	private boolean stopThread;
 
 	private double lastDX, lastDY, lastDist, lastSigma;
 	private int lastDir, lastIteration;
+	private boolean lastIterationUpdated;
+	private boolean iterationFinished;
 
 	public TesselationThread( final int id, final Roi r, final Img< FloatType > img, final int targetArea )
 	{
@@ -59,6 +64,8 @@ public class TesselationThread
 		this.errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
 		this.error = computeError( errorArea, errorCirc );
 		this.iteration = 0;
+		this.runNextIteration = new AtomicBoolean( false );
+		this.stopThread = false;
 	}
 
 	protected double computeError( final double errorArea, final double errorCirc )
@@ -91,7 +98,16 @@ public class TesselationThread
 	public double lastdDist() { return lastDist; }
 	public double lastdSigma() { return lastSigma; }
 	public int lastIteration() { return lastIteration; }
-	
+	public boolean lastIterationUpdated() { return lastIterationUpdated; }
+
+	public void stopThread() { this.stopThread = true; }
+	public synchronized void runNextIteration()
+	{
+		this.iterationFinished = false;
+		this.runNextIteration.set( true );
+	}
+	public boolean iterationFinished() { return iterationFinished; }
+
 	/*
 		1	2020073.0	724.1660295533733	2237322.808866012	16	597	-40.0	0	5.0
 		2	2016975.0	731.9594495755372	2236562.834872661	16	678	40.0	0	5.0
@@ -105,7 +121,7 @@ public class TesselationThread
 	/**
 	 * @return - if was updated, otherwise false
 	 */
-	public boolean runIteration()
+	private boolean runIteration()
 	{
 		++iteration;
 
@@ -217,5 +233,21 @@ public class TesselationThread
 		{
 			return false;
 		}
+	}
+
+	@Override
+	public void run()
+	{
+		do
+		{
+			if ( runNextIteration.getAndSet( false ) )
+			{
+				lastIterationUpdated = runIteration();
+				iterationFinished = true;
+			}
+
+			try { Thread.sleep( 10 ); } catch (InterruptedException e) {}
+		}
+		while ( !stopThread );
 	}
 }

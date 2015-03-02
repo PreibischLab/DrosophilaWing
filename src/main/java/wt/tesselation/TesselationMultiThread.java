@@ -3,9 +3,9 @@ package wt.tesselation;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.Roi;
-import ij.io.FileSaver;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import net.imglib2.FinalInterval;
@@ -13,6 +13,8 @@ import net.imglib2.Interval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Pair;
+import net.imglib2.util.ValuePair;
 import wt.Alignment;
 
 public class TesselationMultiThread
@@ -27,40 +29,97 @@ public class TesselationMultiThread
 		imp.setDisplayRange( 0, targetArea * 2 );
 		imp.show();
 
-		TesselationThread t = new TesselationThread( 0, segments.get( 0 ), img, targetArea );
+		final ArrayList< Pair< TesselationThread, Thread > > threads = new ArrayList< Pair< TesselationThread, Thread > >();
 
-		System.out.println( t.id() + ": Area = " + t.area() );
-		System.out.println( t.id() + ": TargetArea = " + t.targetArea() );
-		System.out.println( t.id() + ": #Points = " + t.numPoints() );
+		for ( int i = 0; i < 2; ++i )
+		{
+			final TesselationThread tt = new TesselationThread( i, segments.get( i ), img, targetArea );
+			final Thread t = new Thread( tt );
+			
+			threads.add( new ValuePair< TesselationThread, Thread >( tt, t ) );
+		}
 
-		
+		for ( final Pair< TesselationThread, Thread > pair : threads )
+		{
+			final TesselationThread t = pair.getA();
+
+			System.out.println( t.id() + ": Area = " + t.area() );
+			System.out.println( t.id() + ": TargetArea = " + t.targetArea() );
+			System.out.println( t.id() + ": #Points = " + t.numPoints() + "\t" );
+
+			pair.getB().start();
+		}
+
+		int iteration = 0;
+
 		do
 		{
-			boolean updated = t.runIteration();
+			int currentIteration = threads.get( 0 ).getA().iteration();
 
-			if ( updated )
+			// order all threads to run the next iteration
+			for ( final Pair< TesselationThread, Thread > pair : threads )
 			{
-				System.out.println(
-						t.id() + "\t" +
-						t.iteration() + "\t" +
-						t.errorArea() + "\t" +
-						t.errorCirc() + "\t" +
-						t.error() + "\t" + 
-						Tesselation.smallestSegment( t.pointList() ).area() + "\t" +
-						Tesselation.largestSegment( t.pointList() ).area() + "\t" +
-						t.lastdDist() + "\t" +
-						t.lastDir() + "\t" +
-						t.lastdSigma() );
-				
-				// update the drawing
-				Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
-				//Tesselation.drawOverlay( imp, t.locationMap().values() );
+				if ( pair.getA().iteration() != currentIteration )
+					throw new RuntimeException( "Iterations out of sync. This should not happen." );
 
-				imp.updateAndDraw();
-				new FileSaver( imp ).saveAsZip( "movie/voronoi_" + t.iteration() + ".zip" );
+				pair.getA().runNextIteration();
 			}
+
+			// wait for threads to finish
+			boolean finished = true;
+			do
+			{
+
+				finished = true;
+				for ( final Pair< TesselationThread, Thread > pair : threads )
+					finished &= pair.getA().iterationFinished();
+
+				try { Thread.sleep( 10 ); } catch (InterruptedException e) {}
+			}
+			while ( !finished );
+
+			currentIteration = threads.get( 0 ).getA().iteration();
+
+			boolean anyUpdated = false;
+
+			for ( final Pair< TesselationThread, Thread > pair : threads )
+			{
+				boolean updated = pair.getA().lastIterationUpdated();
+				anyUpdated |= updated;
+
+				if ( updated )
+				{
+					final TesselationThread t = pair.getA();
+					
+					System.out.println(
+							t.id() + "\t" +
+							t.iteration() + "\t" +
+							t.errorArea() + "\t" +
+							t.errorCirc() + "\t" +
+							t.error() + "\t" + 
+							Tesselation.smallestSegment( t.pointList() ).area() + "\t" +
+							Tesselation.largestSegment( t.pointList() ).area() + "\t" +
+							t.lastdDist() + "\t" +
+							t.lastDir() + "\t" +
+							t.lastdSigma() );
+
+					// update the drawing
+					Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
+					//Tesselation.drawOverlay( imp, t.locationMap().values() );
+				}
+			}
+
+			//0	2041	17005.0	542.9003378081039	179875.10134243118	184	229	1.1835448289993702	0	0.29588620724984255
+
+			if ( anyUpdated )
+			{
+				imp.updateAndDraw();
+				//new FileSaver( imp ).saveAsZip( "movie/voronoi_" + currentIteration + ".zip" );
+				//try { Thread.sleep( 1000 ); } catch (InterruptedException e) {}
+			}
+
 		}
-		while ( t.error() > 0 );
+		while ( iteration >= 0 );
 	}
 
 	public static void main( String[] args )
