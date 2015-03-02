@@ -151,11 +151,14 @@ public class Tesselation
 			double[] dist = new double[]{ -64, -32, -16, -8, -4, 4, 8, 16, 32, 64 };
 			double[] sigmas = new double[]{ 40, 20, 10, 5, 0 };
 
+			double factor = -0.23948 + 13.88349*Math.exp(-(Math.log10( minError )-5.25347)/0.05411) + 2.69144*Math.exp(-(Math.log10( minError )-5.25347)/0.44634);
+			//double oldFactor = iteration / (5*100.0);
+			
 			for ( int i = 0; i < dist.length; ++i )
-				dist[ i ] /= Math.max( 0.1, ( iteration / (5*100.0) ) );
+				dist[ i ] /= Math.max( 0.1, ( factor ) );
 
 			for ( int i = 0; i < sigmas.length; ++i )
-				sigmas[ i ] /= Math.max( 1, ( iteration / (5*1000.0) ) );
+				sigmas[ i ] /= Math.max( 1, ( factor*10 ) );
 
 			if ( iteration % (5*100) == 1 )
 			{

@@ -29,6 +29,11 @@ public class TesselationMultiThread
 
 		TesselationThread t = new TesselationThread( 0, segments.get( 0 ), img, targetArea );
 
+		System.out.println( t.id() + ": Area = " + t.area() );
+		System.out.println( t.id() + ": TargetArea = " + t.targetArea() );
+		System.out.println( t.id() + ": #Points = " + t.numPoints() );
+
+		
 		do
 		{
 			boolean updated = t.runIteration();

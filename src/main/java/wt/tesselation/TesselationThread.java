@@ -55,12 +55,25 @@ public class TesselationThread
 
 		// initial compute simple statistics
 		this.targetCircle = 0;
-		this.errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
-		this.errorCirc = errorMetricCirc.computeError( search.realInterval, targetCircle );
-		this.error = errorArea + 300*errorCirc;
+		this.errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
+		this.errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
+		this.error = computeError( errorArea, errorCirc );
 		this.iteration = 0;
 	}
 
+	protected double computeError( final double errorArea, final double errorCirc )
+	{
+		return errorArea + 300*errorCirc;
+	}
+
+	protected double normError( final double error )
+	{
+		return ( error / (double)numPoints() ) * 169.0; // error relative to the original dataset I tested on so the function works
+	}
+	
+	public int area() { return area; }
+	public int numPoints() { return numPoints; }
+	public int targetArea() { return targetArea; }
 	public int id() { return id; }
 	public double error() { return error; }
 	public double errorCirc() { return errorCirc; }
@@ -132,11 +145,13 @@ public class TesselationThread
 		double[] dist = new double[]{ -64, -32, -16, -8, -4, 4, 8, 16, 32, 64 };
 		double[] sigmas = new double[]{ 40, 20, 10, 5, 0 };
 
+		final double factor = -0.23948 + 13.88349*Math.exp(-(Math.log10( error )-5.24347)/0.05411) + 2.69144*Math.exp(-(Math.log10( error )-5.24347)/0.44634);
+		
 		for ( int i = 0; i < dist.length; ++i )
-			dist[ i ] /= Math.max( 0.1, ( iteration / (5*100.0) ) );
+			dist[ i ] /= Math.max( 0.1, factor );
 
 		for ( int i = 0; i < sigmas.length; ++i )
-			sigmas[ i ] /= Math.max( 1, ( iteration / (5*1000.0) ) );
+			sigmas[ i ] /= Math.max( 1, factor*10.0 );
 
 		// randomly select one of the sigmas
 		final double sigma = sigmas[ rnd.nextInt( sigmas.length ) ];
@@ -157,8 +172,8 @@ public class TesselationThread
 
 				Tesselation.update( mask, search );
 
-				final double errorA = errorMetricArea.computeError( search.realInterval, targetArea );
-				final double errorC = errorMetricCirc.computeError( search.realInterval, targetCircle );
+				final double errorA = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
+				final double errorC = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
 				final double errorTest = errorA + 300*errorC;
 
 				if ( errorTest < minError )
@@ -183,9 +198,9 @@ public class TesselationThread
 		// update the image, area, etc.
 		Tesselation.update( mask, search );
 
-		errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
-		errorCirc = errorMetricCirc.computeError( search.realInterval, targetCircle );
-		error = errorArea + 300*errorCirc;
+		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
+		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
+		error = computeError( errorArea, errorCirc );
 
 		if ( bestDir != -1 )
 		{
