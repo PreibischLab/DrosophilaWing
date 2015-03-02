@@ -3,13 +3,17 @@ package wt.tesselation;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.Roi;
+import ij.io.FileSaver;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
+import net.imglib2.RealPoint;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
@@ -31,7 +35,7 @@ public class TesselationMultiThread
 
 		final ArrayList< Pair< TesselationThread, Thread > > threads = new ArrayList< Pair< TesselationThread, Thread > >();
 
-		for ( int i = 0; i < 2; ++i )
+		for ( int i = 0; i < segments.size(); ++i )
 		{
 			final TesselationThread tt = new TesselationThread( i, segments.get( i ), img, targetArea );
 			final Thread t = new Thread( tt );
@@ -114,10 +118,24 @@ public class TesselationMultiThread
 			if ( anyUpdated )
 			{
 				imp.updateAndDraw();
-				//new FileSaver( imp ).saveAsZip( "movie/voronoi_" + currentIteration + ".zip" );
-				//try { Thread.sleep( 1000 ); } catch (InterruptedException e) {}
+				new FileSaver( imp ).saveAsZip( "movie/voronoi_" + currentIteration + ".zip" );
 			}
 
+			if ( currentIteration % 1000 == 0 )
+			{
+				for ( final Pair< TesselationThread, Thread > pair : threads )
+				{
+					final PrintWriter out = TextFileAccess.openFileWrite( "segment_" + pair.getA().id() + ".points.txt" );
+
+					for ( final Segment s : pair.getA().search().realInterval )
+					{
+						final RealPoint p = pair.getA().locationMap().get( s.id() );
+						out.println( s.id() + "\t" + p.getDoublePosition( 0 ) + "\t" + p.getDoublePosition( 1 ) );
+					}
+					
+					out.close();
+				}
+			}
 		}
 		while ( iteration >= 0 );
 	}
