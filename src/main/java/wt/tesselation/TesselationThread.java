@@ -21,6 +21,7 @@ import wt.tesselation.error.Error;
 import wt.tesselation.error.QuadraticError;
 import wt.tesselation.pointupdate.DistancePointUpdater;
 import wt.tesselation.pointupdate.PointUpdater;
+import wt.tesselation.pointupdate.SimplePointUpdater;
 
 public class TesselationThread implements Runnable
 {
@@ -289,7 +290,12 @@ public class TesselationThread implements Runnable
 
 		// randomly select one of the sigmas
 		final double sigma = sigmas[ rnd.nextInt( sigmas.length ) ];
-		final PointUpdater updater = new DistancePointUpdater( sigma );
+		final PointUpdater updater;
+		
+		if ( sigma == 0.0 )
+			updater = new SimplePointUpdater();
+		else
+			updater = new DistancePointUpdater( sigma );
 
 		for ( int i = 0; i < dist.length; ++i )
 			for ( int dir = 0; dir <= 1; ++dir )
