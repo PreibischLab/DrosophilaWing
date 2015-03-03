@@ -35,13 +35,13 @@ public class DistancePointUpdater implements PointUpdater
 
 			if ( dist < sigma.length )
 			{
-				p.setPosition( p.getDoublePosition( 0 ) + dx * sigma[ dist ], 0 );
-				p.setPosition( p.getDoublePosition( 1 ) + dy * sigma[ dist ], 1 );
+				rp.setPosition( rp.getDoublePosition( 0 ) + dx * sigma[ dist ], 0 );
+				rp.setPosition( rp.getDoublePosition( 1 ) + dy * sigma[ dist ], 1 );
 			}
 		}
 	}
 
-	private static final double dist( final RealPoint p1, final RealPoint p2 )
+	public static final double dist( final RealPoint p1, final RealPoint p2 )
 	{
 		final double x1 = p1.getDoublePosition( 0 );
 		final double x2 = p2.getDoublePosition( 0 );
