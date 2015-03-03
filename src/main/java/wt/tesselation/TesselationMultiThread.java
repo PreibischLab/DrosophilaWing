@@ -9,7 +9,9 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
+import mpicbg.imglib.multithreading.SimpleMultiThreading;
 import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
@@ -57,9 +59,21 @@ public class TesselationMultiThread
 			threads.add( new ValuePair< TesselationThread, Thread >( tt, t ) );
 		}
 
+		// shake?
+		final Random rnd = new Random( 21353 );
+		for ( final Pair< TesselationThread, Thread > pair : threads )
+		{
+			final TesselationThread t = pair.getA();
+			System.out.println( currentState( t ) );
+			t.shake( 5, rnd );
+			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
+			System.out.println( currentState( t ) );
+		}
+
 		if ( currentState != null )
 			imp.updateAndDraw();
 
+		SimpleMultiThreading.threadHaltUnClean();
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
 			final TesselationThread t = pair.getA();
@@ -111,20 +125,7 @@ public class TesselationMultiThread
 				if ( updated )
 				{
 					final TesselationThread t = pair.getA();
-					
-					String s = 
-							t.iteration() + "\t" +
-							t.errorArea() + "\t" +
-							t.errorCirc() + "\t" +
-							t.error() + "\t" + 
-							Tesselation.smallestSegment( t.pointList() ).area() + "\t" +
-							Tesselation.largestSegment( t.pointList() ).area() + "\t" +
-							t.lastdDist() + "\t" +
-							t.lastDir() + "\t" +
-							t.lastdSigma();
-
-					t.logFile().println( s );
-					System.out.println( t.id() + "\t" + s );
+					printCurrentState( t );
 
 					// update the drawing
 					Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
@@ -160,6 +161,28 @@ public class TesselationMultiThread
 			}
 		}
 		while ( iteration >= 0 );
+	}
+
+	protected String currentState( final TesselationThread t )
+	{
+		return 
+				t.iteration() + "\t" +
+				t.errorArea() + "\t" +
+				t.errorCirc() + "\t" +
+				t.error() + "\t" + 
+				Tesselation.smallestSegment( t.pointList() ).area() + "\t" +
+				Tesselation.largestSegment( t.pointList() ).area() + "\t" +
+				t.lastdDist() + "\t" +
+				t.lastDir() + "\t" +
+				t.lastdSigma();
+	}
+
+	protected void printCurrentState( final TesselationThread t )
+	{
+		String s = currentState( t );
+
+		t.logFile().println( s );
+		System.out.println( t.id() + "\t" + s );
 	}
 
 	public static void main( String[] args )

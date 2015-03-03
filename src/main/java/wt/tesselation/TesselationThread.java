@@ -153,6 +153,24 @@ public class TesselationThread implements Runnable
 		19	1811593.0	756.0759042217894	2038415.7712665368	28	638	40.0	0	10.0
 	 */
 
+	public void shake( final double amount, final Random rnd )
+	{
+		for ( final RealPoint p : locationMap.values() )
+		{
+			double rx = (rnd.nextDouble() - 0.5) * 2 * amount;
+			double ry = (rnd.nextDouble() - 0.5) * 2 * amount;
+			
+			p.setPosition( p.getDoublePosition( 0 ) + rx, 0 );
+			p.setPosition( p.getDoublePosition( 1 ) + ry, 1 );
+		}
+
+		Tesselation.update( mask, search );
+
+		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
+		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
+		error = computeError( errorArea, errorCirc );
+	}
+
 	/**
 	 * @return - if was updated, otherwise false
 	 */
