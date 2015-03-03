@@ -13,6 +13,7 @@ import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.IterableRealInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.img.Img;
+import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
 import net.imglib2.type.numeric.real.FloatType;
 import wt.tesselation.error.CircularityError;
 import wt.tesselation.error.Error;
@@ -37,7 +38,7 @@ public class TesselationThread implements Runnable
 	private double errorArea, errorCirc, error;
 	private int iteration;
 	private AtomicBoolean runNextIteration;
-	private boolean stopThread;
+	private boolean stopThread, runExpandShrink;
 
 	private double lastDX, lastDY, lastDist, lastSigma;
 	private int lastDir, lastIteration;
@@ -95,6 +96,7 @@ public class TesselationThread implements Runnable
 		this.iteration = 0;
 		this.runNextIteration = new AtomicBoolean( false );
 		this.stopThread = false;
+		this.runExpandShrink = false;
 	}
 
 	protected double computeError( final double errorArea, final double errorCirc )
@@ -142,6 +144,7 @@ public class TesselationThread implements Runnable
 		this.runNextIteration.set( true );
 	}
 	public boolean iterationFinished() { return iterationFinished; }
+	public void setRunExpandShrink( final boolean state ) { this.runExpandShrink = state; }
 
 	/*
 		1	2020073.0	724.1660295533733	2237322.808866012	16	597	-40.0	0	5.0
@@ -153,7 +156,7 @@ public class TesselationThread implements Runnable
 		19	1811593.0	756.0759042217894	2038415.7712665368	28	638	40.0	0	10.0
 	 */
 
-	public void shake( final double amount, final Random rnd )
+	public void shake( final double amount )
 	{
 		for ( final RealPoint p : locationMap.values() )
 		{
@@ -169,6 +172,127 @@ public class TesselationThread implements Runnable
 		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
 		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
 		error = computeError( errorArea, errorCirc );
+	}
+
+	public boolean runExpandShrinkIteration( final int neighbors, final double scaleFactor )
+	{
+		++iteration;
+
+		// for every segment compute the average error of the nearest n segments
+		final KNearestNeighborSearchOnKDTree< Segment > sr = new KNearestNeighborSearchOnKDTree<Segment>( search.kdTree, neighbors );
+
+		final HashMap< Integer, Double > expandShrink = new HashMap< Integer, Double >();
+		final ArrayList< Segment > allSegments = new ArrayList< Segment >();
+
+		Segment smallest = null;
+		Segment largest = null;
+		double eMin = Double.MAX_VALUE;
+		double eMax = -Double.MAX_VALUE;
+
+		for ( final Segment s : search.realInterval )
+		{
+			allSegments.add( s );
+
+			final RealPoint p = locationMap.get( s.id() );
+			sr.search( p );
+
+			// if the error is positive means it has to shrink (area in average to big)
+			// otherwise has to grow (area in average to small)
+			error = 0;
+
+			for ( int i = 0; i < neighbors; ++i )
+			{
+				final double area = sr.getSampler( i ).get().area();
+				error += area - targetArea();
+			}
+
+			if ( error < eMin )
+			{
+				eMin = error;
+				smallest = s;
+			}
+
+			if ( error > eMax )
+			{
+				eMax = error;
+				largest = s;
+			}
+
+			expandShrink.put( s.id(), error );
+		}
+
+		// now expand/shrink
+		final Segment s1;
+
+		final int r = rnd.nextInt( 2 );
+
+		if ( r == 0 )
+			s1 = largest;
+		else if ( r == 1 )
+			s1 = smallest;
+		else
+			s1 = allSegments.get( rnd.nextInt( allSegments.size() ) );
+
+		final RealPoint p1 = locationMap.get( s1.id() );
+		sr.search( p1 );
+
+		final Segment s2 = sr.getSampler( rnd.nextInt( neighbors - 1 ) + 1 ).get();
+		final RealPoint p2 = locationMap.get( s2.id() );
+
+		final double err = expandShrink.get( s1.id() );
+		
+		final double vx = p2.getDoublePosition( 0 ) - p1.getDoublePosition( 0 );
+		final double vy = p2.getDoublePosition( 1 ) - p1.getDoublePosition( 1 );
+
+		double vx2, vy2;
+
+		if ( err > 0 ) // shrink
+		{
+			vx2 = vx / scaleFactor;
+			vy2 = vy / scaleFactor;
+		}
+		else // expand
+		{
+			vx2 = vx * scaleFactor;
+			vy2 = vy * scaleFactor;
+		}
+
+		double p1x = p1.getDoublePosition( 0 ) - ( vx2 - vx )/2.0;
+		double p2x = p2.getDoublePosition( 0 ) + ( vx2 - vx )/2.0;
+
+		double p1y = p1.getDoublePosition( 1 ) - ( vy2 - vy )/2.0;
+		double p2y = p2.getDoublePosition( 1 ) + ( vy2 - vy )/2.0;
+		/*
+		if ( id() == 0 )
+		{
+			System.out.println( "err: " + err );
+			System.out.println( "p1: " + p1.getDoublePosition( 0 ) + ", " + p1.getDoublePosition( 1 ) );
+			System.out.println( "p2: " + p2.getDoublePosition( 0 ) + ", " + p2.getDoublePosition( 1 ) );
+			System.out.println( "v: " + vx + ", " + vy );
+			System.out.println( "v2: " + vx2 + ", " + vy2 );
+			System.out.println( "d: " + ( vx2 - vx )/2.0 + ", " + ( vy2 - vy )/2.0 );
+			System.out.println( "p1: " + p1x + ", " + p1y );
+			System.out.println( "p2: " + p2x + ", " + p2y );
+			System.out.println( "vn: " + (p2x-p1x) + ", " + (p2y-p1y) );
+			System.exit( 0 );
+		}
+		*/
+
+		p1.setPosition( p1x, 0 );
+		p1.setPosition( p1y, 1 );
+
+		p2.setPosition( p2x, 0 );
+		p2.setPosition( p2y, 1 );
+
+		// update the image, area, etc.
+		Tesselation.update( mask, search );
+
+		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
+		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
+		error = computeError( errorArea, errorCirc );
+
+
+		return true;
 	}
 
 	/**
@@ -295,7 +419,11 @@ public class TesselationThread implements Runnable
 		{
 			if ( runNextIteration.getAndSet( false ) )
 			{
-				lastIterationUpdated = runIteration();
+				if ( runExpandShrink )
+					lastIterationUpdated = runExpandShrinkIteration( 20, 1.5 );
+				else
+					lastIterationUpdated = runIteration();
+
 				iterationFinished = true;
 			}
 

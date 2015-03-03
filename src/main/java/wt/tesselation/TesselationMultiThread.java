@@ -9,9 +9,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
-import mpicbg.imglib.multithreading.SimpleMultiThreading;
 import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
@@ -59,21 +57,21 @@ public class TesselationMultiThread
 			threads.add( new ValuePair< TesselationThread, Thread >( tt, t ) );
 		}
 
+		/*
 		// shake?
-		final Random rnd = new Random( 21353 );
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
 			final TesselationThread t = pair.getA();
-			System.out.println( currentState( t ) );
-			t.shake( 5, rnd );
+
+			t.shake( 2.5 );
 			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
-			System.out.println( currentState( t ) );
+			System.out.println( t.id() + "\t" + currentState( t ) );
 		}
+		*/
 
 		if ( currentState != null )
 			imp.updateAndDraw();
 
-		SimpleMultiThreading.threadHaltUnClean();
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
 			final TesselationThread t = pair.getA();
@@ -85,8 +83,6 @@ public class TesselationMultiThread
 			pair.getB().start();
 		}
 
-		int iteration = 0;
-
 		do
 		{
 			int currentIteration = threads.get( 0 ).getA().iteration();
@@ -96,6 +92,11 @@ public class TesselationMultiThread
 			{
 				if ( pair.getA().iteration() != currentIteration )
 					throw new RuntimeException( "Iterations out of sync. This should not happen." );
+
+				if ( currentIteration % 49 == 1 )
+					pair.getA().setRunExpandShrink( true );
+				else
+					pair.getA().setRunExpandShrink( false );
 
 				pair.getA().runNextIteration();
 			}
@@ -143,6 +144,7 @@ public class TesselationMultiThread
 
 			if ( currentIteration % 1000 == 0 )
 			{
+				System.out.println( "saving..." + currentIteration );
 				for ( final Pair< TesselationThread, Thread > pair : threads )
 				{
 					final PrintWriter out = TextFileAccess.openFileWrite( "segment_" + pair.getA().id() + ".points.txt" );
@@ -160,7 +162,7 @@ public class TesselationMultiThread
 				}
 			}
 		}
-		while ( iteration >= 0 );
+		while ( true );
 	}
 
 	protected String currentState( final TesselationThread t )
@@ -198,8 +200,8 @@ public class TesselationMultiThread
 
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
-		//for ( int i = 0; i < segments.size(); ++i )
-		//	currentState.add( new File( "segment_" + i + ".points.txt" ) );
+		for ( int i = 0; i < segments.size(); ++i )
+			currentState.add( new File( "segment_" + i + ".points.txt" ) );
 
 		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}
