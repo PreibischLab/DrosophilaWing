@@ -68,7 +68,21 @@ public class TesselationThread implements Runnable
 		this.errorMetricArea = new QuadraticError();
 		this.errorMetricCirc = new CircularityError();
 		this.id = id;
-		this.logFile = TextFileAccess.openFileWrite( "log_segment_" + id() + ".txt" );
+
+		if ( new File( "log_segment_" + id() + ".txt" ).exists() )
+		{
+			int updateId = 0;
+
+			File file;
+
+			do
+			{
+				++updateId;
+				file = new File( "log_segment_" + id() + "_" + updateId + ".txt" );
+			}
+			while ( file.exists() );
+			this.logFile = TextFileAccess.openFileWrite( file );
+		}
 
 		// initial compute areas
 		Tesselation.update( mask, search );

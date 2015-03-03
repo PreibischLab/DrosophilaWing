@@ -17,31 +17,41 @@ import wt.Alignment;
 
 public class DisplayTesselation
 {
-	public DisplayTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState )
+	final ImagePlus impArea, impId;
+	final Img< FloatType > imgArea, imgId;
+
+	public DisplayTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState, final boolean normalizeIds )
 	{
 		final int targetArea = 200;
 
-		final Img< FloatType > imgArea = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
-		final Img< FloatType > imgId = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
+		this.imgArea = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
+		this.imgId = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 
-		final ImagePlus impArea = new ImagePlus( "voronoiArea", Alignment.wrap( imgArea ) );
+		this.impArea = new ImagePlus( "voronoiArea", Alignment.wrap( imgArea ) );
 		impArea.setDisplayRange( 0, targetArea * 2 );
-		impArea.show();
 
-		final ImagePlus impId = new ImagePlus( "voronoiId", Alignment.wrap( imgId ) );
+		this.impId = new ImagePlus( "voronoiId", Alignment.wrap( imgId ) );
 		impId.setDisplayRange( 0, targetArea * 2 );
-		impId.show();
 
 		for ( int i = 0; i < segments.size(); ++i )
 		{
 			final TesselationThread tt = new TesselationThread( i, segments.get( i ), imgArea, targetArea, currentState.get( i ) );
 			Tesselation.drawArea( tt.mask(), tt.search().randomAccessible, imgArea );
-			Tesselation.drawId( tt.mask(), tt.search().randomAccessible, imgId, tt.search().realInterval );
+
+			if ( normalizeIds )
+				Tesselation.drawId( tt.mask(), tt.search().randomAccessible, imgId, tt.search().realInterval );
+			else
+				Tesselation.drawId( tt.mask(), tt.search().randomAccessible, imgId );
 		}
 
 		impArea.updateAndDraw();
 		impId.updateAndDraw();
 	}
+
+	public ImagePlus impArea() { return impArea; }
+	public ImagePlus impId() { return impId; }
+	public Img< FloatType > imgArea() { return imgArea; }
+	public Img< FloatType > imgId() { return imgId; }
 
 	public static void main( String[] args )
 	{
@@ -59,7 +69,11 @@ public class DisplayTesselation
 		for ( int i = 0; i < segments.size(); ++i )
 			currentState.add( new File( "segment_" + i + ".points.txt" ) );
 
-		new DisplayTesselation( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
+		final DisplayTesselation dt = new DisplayTesselation( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState, true );
+
+		dt.impArea().show();
+		dt.impId().resetDisplayRange();
+		dt.impId().show();
 	}
 
 }

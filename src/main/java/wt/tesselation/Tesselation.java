@@ -366,12 +366,20 @@ public class Tesselation
 		}
 	}
 
+	final protected static void drawId( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img )
+	{
+		drawId( mask, randomAccessible, img, null );
+	}
+
 	final protected static void drawId( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img, final Iterable< Segment > segmentMap )
 	{
-		float maxId = 0;
+		float maxId = 1;
 
-		for ( final Segment s : segmentMap )
-			maxId = Math.max( s.id(), maxId );
+		if ( segmentMap != null )
+		{
+			for ( final Segment s : segmentMap )
+				maxId = Math.max( s.id(), maxId );
+		}
 
 		final RandomAccess< Segment > ra = randomAccessible.randomAccess();
 		final RandomAccess< FloatType > ri = img.randomAccess();
