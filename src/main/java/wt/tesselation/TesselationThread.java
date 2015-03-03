@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.IterableRealInterval;
+import net.imglib2.RandomAccess;
 import net.imglib2.RealPoint;
 import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
@@ -86,7 +87,7 @@ public class TesselationThread implements Runnable
 		}
 
 		// initial compute areas
-		Tesselation.update( mask, search );
+		update( mask, search );
 
 		// initial compute simple statistics
 		this.targetCircle = 0;
@@ -146,16 +147,6 @@ public class TesselationThread implements Runnable
 	public boolean iterationFinished() { return iterationFinished; }
 	public void setRunExpandShrink( final boolean state ) { this.runExpandShrink = state; }
 
-	/*
-		1	2020073.0	724.1660295533733	2237322.808866012	16	597	-40.0	0	5.0
-		2	2016975.0	731.9594495755372	2236562.834872661	16	678	40.0	0	5.0
-		3	1914239.0	731.8947097282255	2133807.4129184675	21	678	-40.0	0	10.0
-		6	1856003.0	741.2279171116423	2078371.3751334928	21	638	80.0	0	5.0
-		8	1856003.0	741.2279171116423	2041351.684549911	21	638	-80.0	0	0.0
-		18	1856003.0	741.2279171116423	2012215.4622025955	21	638	40.0	0	0.0
-		19	1811593.0	756.0759042217894	2038415.7712665368	28	638	40.0	0	10.0
-	 */
-
 	public void shake( final double amount )
 	{
 		for ( final RealPoint p : locationMap.values() )
@@ -167,7 +158,7 @@ public class TesselationThread implements Runnable
 			p.setPosition( p.getDoublePosition( 1 ) + ry, 1 );
 		}
 
-		Tesselation.update( mask, search );
+		update( mask, search );
 
 		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
 		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
@@ -221,76 +212,26 @@ public class TesselationThread implements Runnable
 			expandShrink.put( s.id(), error );
 		}
 
-		// now expand/shrink
-		final Segment s1;
+		// now expand/shrink from smallest to largest
 
-		final int r = rnd.nextInt( 2 );
-
-		if ( r == 0 )
-			s1 = largest;
-		else if ( r == 1 )
-			s1 = smallest;
-		else
-			s1 = allSegments.get( rnd.nextInt( allSegments.size() ) );
+		final Segment s1 = smallest;
+		final Segment s2 = largest;
 
 		final RealPoint p1 = locationMap.get( s1.id() );
-		sr.search( p1 );
-
-		final Segment s2 = sr.getSampler( rnd.nextInt( neighbors - 1 ) + 1 ).get();
 		final RealPoint p2 = locationMap.get( s2.id() );
 
-		final double err = expandShrink.get( s1.id() );
-		
-		final double vx = p2.getDoublePosition( 0 ) - p1.getDoublePosition( 0 );
-		final double vy = p2.getDoublePosition( 1 ) - p1.getDoublePosition( 1 );
+		final double dist = DistancePointUpdater.dist( p1, p2 );
+		final double vx = ( p2.getDoublePosition( 0 ) - p1.getDoublePosition( 0 ) ) / dist;
+		final double vy = ( p2.getDoublePosition( 1 ) - p1.getDoublePosition( 1 ) ) / dist;
 
-		double vx2, vy2;
-
-		if ( err > 0 ) // shrink
-		{
-			vx2 = vx / scaleFactor;
-			vy2 = vy / scaleFactor;
-		}
-		else // expand
-		{
-			vx2 = vx * scaleFactor;
-			vy2 = vy * scaleFactor;
-		}
-
-		double p1x = p1.getDoublePosition( 0 ) - ( vx2 - vx )/2.0;
-		double p2x = p2.getDoublePosition( 0 ) + ( vx2 - vx )/2.0;
-
-		double p1y = p1.getDoublePosition( 1 ) - ( vy2 - vy )/2.0;
-		double p2y = p2.getDoublePosition( 1 ) + ( vy2 - vy )/2.0;
-		/*
-		if ( id() == 0 )
-		{
-			System.out.println( "err: " + err );
-			System.out.println( "p1: " + p1.getDoublePosition( 0 ) + ", " + p1.getDoublePosition( 1 ) );
-			System.out.println( "p2: " + p2.getDoublePosition( 0 ) + ", " + p2.getDoublePosition( 1 ) );
-			System.out.println( "v: " + vx + ", " + vy );
-			System.out.println( "v2: " + vx2 + ", " + vy2 );
-			System.out.println( "d: " + ( vx2 - vx )/2.0 + ", " + ( vy2 - vy )/2.0 );
-			System.out.println( "p1: " + p1x + ", " + p1y );
-			System.out.println( "p2: " + p2x + ", " + p2y );
-			System.out.println( "vn: " + (p2x-p1x) + ", " + (p2y-p1y) );
-			System.exit( 0 );
-		}
-		*/
-
-		p1.setPosition( p1x, 0 );
-		p1.setPosition( p1y, 1 );
-
-		p2.setPosition( p2x, 0 );
-		p2.setPosition( p2y, 1 );
+		new DistancePointUpdater( 100 ).updatePoints( p1, locationMap.values(), vx * scaleFactor, vy * scaleFactor );
 
 		// update the image, area, etc.
-		Tesselation.update( mask, search );
+		update( mask, search );
 
 		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
 		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
 		error = computeError( errorArea, errorCirc );
-
 
 		return true;
 	}
@@ -363,7 +304,7 @@ public class TesselationThread implements Runnable
 
 				updater.updatePoints( p, locationMap.values(), dx, dy );
 
-				Tesselation.update( mask, search );
+				update( mask, search );
 
 				final double errorA = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
 				final double errorC = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
@@ -389,7 +330,7 @@ public class TesselationThread implements Runnable
 			updater.updatePoints( p, locationMap.values(), bestdx, bestdy );
 
 		// update the image, area, etc.
-		Tesselation.update( mask, search );
+		update( mask, search );
 
 		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
 		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
@@ -412,6 +353,29 @@ public class TesselationThread implements Runnable
 		}
 	}
 
+	final protected static void update( final int[][] mask, final Search search )
+	{
+		// update the new coordinates for the pointlist
+		search.update();
+
+		final RandomAccess< Segment > ra = search.randomAccessible.randomAccess();
+
+		for ( final Segment s : search.realInterval )
+		{
+			s.setArea( 0 );
+			s.pixels().clear();
+		}
+
+		for ( final int[] ml : mask )
+		{
+			ra.setPosition( ml );
+
+			final Segment s = ra.get();
+			s.incArea();
+			s.pixels().add( ml );
+		}
+	}
+
 	@Override
 	public void run()
 	{
@@ -420,7 +384,7 @@ public class TesselationThread implements Runnable
 			if ( runNextIteration.getAndSet( false ) )
 			{
 				if ( runExpandShrink )
-					lastIterationUpdated = runExpandShrinkIteration( 20, 1.5 );
+					lastIterationUpdated = runExpandShrinkIteration( numPoints()/5, 10 );
 				else
 					lastIterationUpdated = runIteration();
 

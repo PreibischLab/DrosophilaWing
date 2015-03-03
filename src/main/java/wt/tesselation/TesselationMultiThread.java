@@ -42,19 +42,17 @@ public class TesselationMultiThread
 
 		for ( int i = 0; i < segments.size(); ++i )
 		{
-			final TesselationThread tt;
+			final TesselationThread t;
 
 			if ( currentState == null || currentState.size() != segments.size() )
-				tt = new TesselationThread( i, segments.get( i ), img, targetArea );
+				t = new TesselationThread( i, segments.get( i ), img, targetArea );
 			else
-			{
-				tt = new TesselationThread( i, segments.get( i ), img, targetArea, currentState.get( i ) );
-				Tesselation.drawArea( tt.mask(), tt.search().randomAccessible, img );
-			}
+				t = new TesselationThread( i, segments.get( i ), img, targetArea, currentState.get( i ) );
 
-			final Thread t = new Thread( tt );
+			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
+			//Tesselation.drawOverlay( imp, t.locationMap().values() );
 
-			threads.add( new ValuePair< TesselationThread, Thread >( tt, t ) );
+			threads.add( new ValuePair< TesselationThread, Thread >( t, new Thread( t ) ) );
 		}
 
 		/*
@@ -65,12 +63,12 @@ public class TesselationMultiThread
 
 			t.shake( 2.5 );
 			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
+			Tesselation.drawOverlay( imp, t.locationMap().values() );
 			System.out.println( t.id() + "\t" + currentState( t ) );
 		}
 		*/
 
-		if ( currentState != null )
-			imp.updateAndDraw();
+		imp.updateAndDraw();
 
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
@@ -79,6 +77,7 @@ public class TesselationMultiThread
 			System.out.println( t.id() + ": Area = " + t.area() );
 			System.out.println( t.id() + ": TargetArea = " + t.targetArea() );
 			System.out.println( t.id() + ": #Points = " + t.numPoints() + "\t" );
+			printCurrentState( t );
 
 			pair.getB().start();
 		}
@@ -93,11 +92,19 @@ public class TesselationMultiThread
 				if ( pair.getA().iteration() != currentIteration )
 					throw new RuntimeException( "Iterations out of sync. This should not happen." );
 
-				if ( currentIteration % 49 == 1 )
+				/*
+				if ( currentIteration == 0 )
+				{
+					System.out.println( "Shrink" );
 					pair.getA().setRunExpandShrink( true );
+				}
 				else
+				{
+					System.out.println( "Normal" );
 					pair.getA().setRunExpandShrink( false );
-
+					SimpleMultiThreading.threadHaltUnClean();
+				}
+				*/
 				pair.getA().runNextIteration();
 			}
 
@@ -133,8 +140,6 @@ public class TesselationMultiThread
 					//Tesselation.drawOverlay( imp, t.locationMap().values() );
 				}
 			}
-
-			//0	2041	17005.0	542.9003378081039	179875.10134243118	184	229	1.1835448289993702	0	0.29588620724984255
 
 			if ( anyUpdated )
 			{
@@ -200,8 +205,8 @@ public class TesselationMultiThread
 
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
-		for ( int i = 0; i < segments.size(); ++i )
-			currentState.add( new File( "segment_" + i + ".points.txt" ) );
+		//for ( int i = 0; i < segments.size(); ++i )
+		//	currentState.add( new File( "segment_" + i + ".points.txt" ) );
 
 		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}

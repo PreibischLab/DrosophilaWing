@@ -15,7 +15,7 @@ public class QuadraticError implements Error
 			final int area = s.area();
 			
 			if ( area <= 1 )
-				error += ( 100 * target ) * ( 100 * target );
+				error += ( 1000 * target ) * ( 1000 * target );
 			else
 				error += ( area - target ) * ( area - target );
 		}

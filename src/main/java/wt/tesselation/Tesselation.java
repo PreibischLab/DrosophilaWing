@@ -91,7 +91,7 @@ public class Tesselation
 		Error errorMetricCirc = new CircularityError();
 
 		// initial compute areas
-		update( mask, search );
+		TesselationThread.update( mask, search );
 
 		// initial compute simple statistics
 		final double targetCircle = 0;
@@ -200,7 +200,7 @@ public class Tesselation
 	
 						updater.updatePoints( p, locations.values(), dx, dy );
 	
-						update( mask, search );
+						TesselationThread.update( mask, search );
 	
 						final double errorA = errorMetricArea.computeError( search.realInterval, targetArea );
 						final double errorC = errorMetricCirc.computeError( search.realInterval, targetCircle );
@@ -228,7 +228,7 @@ public class Tesselation
 				final PointUpdater updater = new DistancePointUpdater( bestSigma );
 				updater.updatePoints( p, locations.values(), bestdx, bestdy );
 			}
-			update( mask, search );
+			TesselationThread.update( mask, search );
 
 			errorArea = errorMetricArea.computeError( search.realInterval, targetArea );
 			errorCirc = errorMetricCirc.computeError( search.realInterval, targetCircle );
@@ -272,6 +272,13 @@ public class Tesselation
 		{
 			final OvalRoi or = new OvalRoi( Util.round( p.getFloatPosition( 0 ) - 1 ), Util.round( p.getFloatPosition( 1 ) - 1 ), 3, 3 );
 			or.setStrokeColor( Color.red );
+			
+			if ( p.getFloatPosition( 0 ) == 260.9962f )
+			{
+				or.setStrokeColor( Color.blue );
+				or.setStrokeWidth( 2 );
+			}
+			
 			o.add( or );
 		}
 	}
@@ -300,7 +307,7 @@ public class Tesselation
 		Segment min = segmentMap.iterator().next();
 
 		for ( final Segment s : segmentMap )
-			if ( s.area() < min.area )
+			if ( s.area() < min.area() )
 				min = s;
 
 		return min;
@@ -327,7 +334,7 @@ public class Tesselation
 		Segment max = segmentMap.iterator().next();
 
 		for ( final Segment s : segmentMap )
-			if ( s.area() > max.area )
+			if ( s.area() > max.area() )
 				max = s;
 
 		return max;
@@ -341,29 +348,6 @@ public class Tesselation
 			l.add( s );
 
 		return l.get( rnd.nextInt( l.size() ) );
-	}
-
-	final protected static void update( final int[][] mask, final Search search )
-	{
-		// update the new coordinates for the pointlist
-		search.update();
-
-		final RandomAccess< Segment > ra = search.randomAccessible.randomAccess();
-
-		for ( final Segment s : search.realInterval )
-		{
-			s.setArea( 0 );
-			s.pixels().clear();
-		}
-
-		for ( final int[] ml : mask )
-		{
-			ra.setPosition( ml );
-
-			final Segment s = ra.get();
-			s.incArea();
-			s.pixels().add( ml );
-		}
 	}
 
 	final protected static void drawId( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img )
@@ -455,7 +439,9 @@ public class Tesselation
 				for ( int d = 0; d < numDimensions; ++d )
 					point.setPosition( (int)Math.round( rnd.nextDouble() * ( interval.realMax( d ) - interval.realMin( d ) ) + interval.realMin( d ) ), d );
 	
-				if ( r == null || r.contains( Math.round( point.getFloatPosition( 0 ) ), Math.round( point.getFloatPosition( 1 ) ) ) )
+				if (
+						( r == null || r.contains( Math.round( point.getFloatPosition( 0 ) ), Math.round( point.getFloatPosition( 1 ) ) ) ) &&
+						!alreadyThere( point, locations.values() ) )
 				{
 					// add a new element with a random intensity in the range 0...1
 					final Segment s = new Segment( i );
@@ -472,6 +458,24 @@ public class Tesselation
 		return elements;
 	}
 
+	protected static boolean alreadyThere( final RealPoint p, final Iterable< RealPoint > otherPoints )
+	{
+		final int n = p.numDimensions();
+
+		for ( final RealPoint q : otherPoints )
+		{
+			boolean allsame = true;
+
+			for ( int d = 0; d < n; ++d )
+				if ( p.getDoublePosition( d ) != q.getDoublePosition( d ) )
+					allsame = false;
+
+			if ( allsame )
+				return true;
+		}
+
+		return false;
+	}
 	protected final static RealPointSampleList< Segment > loadPoints( final File pointFile, final int numDimensions, final int numPoints, final HashMap< Integer, RealPoint > locations )
 	{
 		// a list of Samples with coordinates
