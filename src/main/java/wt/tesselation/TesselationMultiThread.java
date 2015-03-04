@@ -78,7 +78,7 @@ public class TesselationMultiThread
 
 			System.out.println( t.id() + "\t" + currentState( t ) );
 
-			t.expandShrink( t.numPoints()/3, 20, imp );
+			t.expandShrink( t.numPoints()/3, 20 );
 
 			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
 			System.out.println( t.id() + "\t" + currentState( t ) );
@@ -86,7 +86,7 @@ public class TesselationMultiThread
 
 		imp.updateAndDraw();
 
-		SimpleMultiThreading.threadHaltUnClean();
+		//SimpleMultiThreading.threadHaltUnClean();
 
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
