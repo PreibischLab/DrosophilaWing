@@ -1,0 +1,1 @@
+First run on random points, with originally buggy DistancePointUpdater code.
