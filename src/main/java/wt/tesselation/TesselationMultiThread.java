@@ -56,6 +56,8 @@ public class TesselationMultiThread
 			threads.add( new ValuePair< TesselationThread, Thread >( t, new Thread( t ) ) );
 		}
 
+		imp.updateAndDraw();
+
 		/*
 		// shake?
 		for ( final Pair< TesselationThread, Thread > pair : threads )
@@ -69,6 +71,8 @@ public class TesselationMultiThread
 			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
 			System.out.println( t.id() + "\t" + currentState( t ) );
 		}
+		SimpleMultiThreading.threadWait( 500 );
+		imp.updateAndDraw();
 		*/
 
 		// expand/shrink?
@@ -78,12 +82,12 @@ public class TesselationMultiThread
 
 			System.out.println( t.id() + "\t" + currentState( t ) );
 
-			t.expandShrink( t.numPoints()/3, 20 );
+			t.expandShrink( t.numPoints()/3, 10 );
 
 			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
 			System.out.println( t.id() + "\t" + currentState( t ) );
 		}
-
+		SimpleMultiThreading.threadWait( 500 );
 		imp.updateAndDraw();
 
 		//SimpleMultiThreading.threadHaltUnClean();
@@ -210,7 +214,7 @@ public class TesselationMultiThread
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
 		for ( int i = 0; i < segments.size(); ++i )
-			currentState.add( new File( "movie_1_shake/segment_" + i + ".points.txt" ) );
+			currentState.add( new File( "movie_1_shake_shrinkexpand/segment_" + i + ".points.txt" ) );
 
 		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}
