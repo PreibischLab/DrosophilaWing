@@ -149,7 +149,6 @@ public class TesselationMultiThread
 
 			if ( currentIteration % 1000 == 0 )
 			{
-				System.out.println( "saving..." + currentIteration );
 				for ( final Pair< TesselationThread, Thread > pair : threads )
 				{
 					final PrintWriter out = TextFileAccess.openFileWrite( "segment_" + pair.getA().id() + ".points.txt" );
