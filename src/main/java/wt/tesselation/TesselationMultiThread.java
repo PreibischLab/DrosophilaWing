@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import mpicbg.imglib.multithreading.SimpleMultiThreading;
 import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
@@ -61,14 +62,31 @@ public class TesselationMultiThread
 		{
 			final TesselationThread t = pair.getA();
 
-			t.shake( 2.5 );
+			System.out.println( t.id() + "\t" + currentState( t ) );
+
+			t.shake( 1 );
+
 			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
-			Tesselation.drawOverlay( imp, t.locationMap().values() );
 			System.out.println( t.id() + "\t" + currentState( t ) );
 		}
 		*/
 
+		// expand/shrink?
+		for ( final Pair< TesselationThread, Thread > pair : threads )
+		{
+			final TesselationThread t = pair.getA();
+
+			System.out.println( t.id() + "\t" + currentState( t ) );
+
+			t.expandShrink( t.numPoints()/5, 10 );
+
+			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
+			System.out.println( t.id() + "\t" + currentState( t ) );
+		}
+
 		imp.updateAndDraw();
+
+		SimpleMultiThreading.threadHaltUnClean();
 
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
@@ -92,19 +110,6 @@ public class TesselationMultiThread
 				if ( pair.getA().iteration() != currentIteration )
 					throw new RuntimeException( "Iterations out of sync. This should not happen." );
 
-				/*
-				if ( currentIteration == 0 )
-				{
-					System.out.println( "Shrink" );
-					pair.getA().setRunExpandShrink( true );
-				}
-				else
-				{
-					System.out.println( "Normal" );
-					pair.getA().setRunExpandShrink( false );
-					SimpleMultiThreading.threadHaltUnClean();
-				}
-				*/
 				pair.getA().runNextIteration();
 			}
 
@@ -204,8 +209,8 @@ public class TesselationMultiThread
 
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
-		//for ( int i = 0; i < segments.size(); ++i )
-		//	currentState.add( new File( "segment_" + i + ".points.txt" ) );
+		for ( int i = 0; i < segments.size(); ++i )
+			currentState.add( new File( "movie_1_shake/segment_" + i + ".points.txt" ) );
 
 		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}

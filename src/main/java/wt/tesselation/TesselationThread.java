@@ -40,7 +40,7 @@ public class TesselationThread implements Runnable
 	private double errorArea, errorCirc, error;
 	private int iteration;
 	private AtomicBoolean runNextIteration;
-	private boolean stopThread, runExpandShrink;
+	private boolean stopThread;
 
 	private double lastDX, lastDY, lastDist, lastSigma;
 	private int lastDir, lastIteration;
@@ -102,7 +102,6 @@ public class TesselationThread implements Runnable
 		this.iteration = 0;
 		this.runNextIteration = new AtomicBoolean( false );
 		this.stopThread = false;
-		this.runExpandShrink = false;
 	}
 
 	protected double computeError( final double errorArea, final double errorCirc )
@@ -150,7 +149,6 @@ public class TesselationThread implements Runnable
 		this.runNextIteration.set( true );
 	}
 	public boolean iterationFinished() { return iterationFinished; }
-	public void setRunExpandShrink( final boolean state ) { this.runExpandShrink = state; }
 
 	public void shake( final double amount )
 	{
@@ -170,10 +168,8 @@ public class TesselationThread implements Runnable
 		error = computeError( errorArea, errorCirc );
 	}
 
-	public boolean runExpandShrinkIteration( final int neighbors, final double scaleFactor )
+	public void expandShrink( final int neighbors, final double scaleFactor )
 	{
-		++iteration;
-
 		// for every segment compute the average error of the nearest n segments
 		final KNearestNeighborSearchOnKDTree< Segment > sr = new KNearestNeighborSearchOnKDTree<Segment>( search.kdTree, neighbors );
 
@@ -237,8 +233,6 @@ public class TesselationThread implements Runnable
 		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
 		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
 		error = computeError( errorArea, errorCirc );
-
-		return true;
 	}
 
 	/**
@@ -393,11 +387,7 @@ public class TesselationThread implements Runnable
 		{
 			if ( runNextIteration.getAndSet( false ) )
 			{
-				if ( runExpandShrink )
-					lastIterationUpdated = runExpandShrinkIteration( numPoints()/5, 10 );
-				else
-					lastIterationUpdated = runIteration();
-
+				lastIterationUpdated = runIteration();
 				iterationFinished = true;
 			}
 
