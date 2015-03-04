@@ -86,6 +86,10 @@ public class TesselationThread implements Runnable
 			while ( file.exists() );
 			this.logFile = TextFileAccess.openFileWrite( file );
 		}
+		else
+		{
+			this.logFile = TextFileAccess.openFileWrite( new File( "log_segment_" + id() + ".txt" ) );
+		}
 
 		// initial compute areas
 		update( mask, search );
