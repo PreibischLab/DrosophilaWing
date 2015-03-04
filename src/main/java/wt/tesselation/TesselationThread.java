@@ -1,11 +1,16 @@
 package wt.tesselation;
 
+import ij.ImagePlus;
+import ij.gui.Line;
+import ij.gui.Overlay;
 import ij.gui.Roi;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -168,8 +173,21 @@ public class TesselationThread implements Runnable
 		error = computeError( errorArea, errorCirc );
 	}
 
-	public void expandShrink( final int neighbors, final double scaleFactor )
+	public void expandShrink( final int neighbors, final double scaleFactor ) { expandShrink( neighbors, scaleFactor, null ); }
+
+	public void expandShrink( final int neighbors, final double scaleFactor, final ImagePlus imp )
 	{
+		ArrayList< RealPoint > backup = null;
+
+		if ( imp != null )
+		{
+			// backup all locations
+			backup = new ArrayList< RealPoint >();
+			
+			for ( final RealPoint p : locationMap.values() )
+				backup.add( new RealPoint( p ) );
+		}
+
 		// for every segment compute the average error of the nearest n segments
 		final KNearestNeighborSearchOnKDTree< Segment > sr = new KNearestNeighborSearchOnKDTree<Segment>( search.kdTree, neighbors );
 
@@ -214,7 +232,6 @@ public class TesselationThread implements Runnable
 		}
 
 		// now expand/shrink from smallest to largest
-
 		final Segment s1 = smallest;
 		final Segment s2 = largest;
 
@@ -233,6 +250,37 @@ public class TesselationThread implements Runnable
 		errorArea = normError( errorMetricArea.computeError( search.realInterval, targetArea ) );
 		errorCirc = normError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
 		error = computeError( errorArea, errorCirc );
+
+		if ( imp != null )
+			drawExpandShrink( imp, locationMap.values(), backup );
+	}
+
+	protected void drawExpandShrink( final ImagePlus imp, final Iterable< RealPoint > now, final Iterable< RealPoint > before )
+	{
+		Overlay o = imp.getOverlay();
+		
+		if ( o == null )
+		{
+			o = new Overlay();
+			imp.setOverlay( o );
+		}
+
+		final Iterator< RealPoint > a = now.iterator();
+		final Iterator< RealPoint > b = before.iterator();
+
+		while ( a.hasNext() )
+		{
+			final RealPoint to = a.next();
+			final RealPoint from = b.next();
+
+			final Line lr = new Line(
+					Math.round( from.getFloatPosition( 0 ) ), Math.round( from.getFloatPosition( 1 ) ),
+					Math.round( to.getFloatPosition( 0 ) ), Math.round( to.getFloatPosition( 1 ) ) );
+
+			lr.setStrokeColor( Color.red );
+
+			o.add( lr );
+		}
 	}
 
 	/**
