@@ -1,0 +1,2 @@
+Third run, now used Shrink/Expand which smoothened it but maybe overdid it (t.expandShrink( t.numPoints()/3, 20 ))
+Second run after "random points with correct DistancePointUpdater code", using a shake of "1".
