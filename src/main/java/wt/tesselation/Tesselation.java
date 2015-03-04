@@ -272,13 +272,7 @@ public class Tesselation
 		{
 			final OvalRoi or = new OvalRoi( Util.round( p.getFloatPosition( 0 ) - 1 ), Util.round( p.getFloatPosition( 1 ) - 1 ), 3, 3 );
 			or.setStrokeColor( Color.red );
-			
-			if ( p.getFloatPosition( 0 ) == 260.9962f )
-			{
-				or.setStrokeColor( Color.blue );
-				or.setStrokeWidth( 2 );
-			}
-			
+
 			o.add( or );
 		}
 	}
