@@ -76,21 +76,45 @@ public class TesselationMultiThread
 		*/
 
 		// expand/shrink?
+		
+		for ( int i = 0; i < 10; ++i )
+		{
+			if ( imp.getOverlay() != null )
+				imp.getOverlay().clear();
+
+			for ( final Pair< TesselationThread, Thread > pair : threads )
+			{
+				final TesselationThread t = pair.getA();
+	
+				t.computeGlobalError( t.numPoints()/5, true, null );
+				Tesselation.drawValue( t.mask(), t.search().randomAccessible, img );
+
+				if ( i == 0 )
+					continue;
+	
+				t.expandShrink( t.numPoints()/5, 10, imp );
+	
+				//Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
+				//Tesselation.drawValue( t.mask(), t.search().randomAccessible, img );
+				//System.out.println( t.id() + "\t" + currentState( t ) );
+			}
+
+			if ( i == 0 )
+				imp.resetDisplayRange();
+
+			imp.updateAndDraw();
+			//SimpleMultiThreading.threadHaltUnClean();
+			SimpleMultiThreading.threadWait( 2000 );
+		}
+		
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
 			final TesselationThread t = pair.getA();
-
-			System.out.println( t.id() + "\t" + currentState( t ) );
-
-			t.expandShrink( t.numPoints()/3, 10 );
-
-			Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
-			System.out.println( t.id() + "\t" + currentState( t ) );
+			Tesselation.drawValue( t.mask(), t.search().randomAccessible, img );
 		}
-		SimpleMultiThreading.threadWait( 500 );
 		imp.updateAndDraw();
 
-		//SimpleMultiThreading.threadHaltUnClean();
+		SimpleMultiThreading.threadHaltUnClean();
 
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
@@ -214,7 +238,7 @@ public class TesselationMultiThread
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
 		for ( int i = 0; i < segments.size(); ++i )
-			currentState.add( new File( "movie_1_shake_shrinkexpand/segment_" + i + ".points.txt" ) );
+			currentState.add( new File( "movie_1/segment_" + i + ".points.txt" ) );
 
 		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}

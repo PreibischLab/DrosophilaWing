@@ -11,13 +11,7 @@ public class DistancePointUpdater implements PointUpdater
 
 	public DistancePointUpdater( final double sigma )
 	{
-		double[] sigmaTmp = Util.createGaussianKernel1DDouble( sigma, false );
-
-		this.sigma = new double[ sigmaTmp.length / 2 + 1 ];
-
-		// take only the second half [ 1 ... 0 ]
-		for ( int i = sigmaTmp.length / 2; i < sigmaTmp.length; ++i )
-			this.sigma[ i - sigmaTmp.length / 2 ] = sigmaTmp[ i ];
+		this.sigma = sigmas( sigma, false );
 	}
 
 	@Override
@@ -39,6 +33,28 @@ public class DistancePointUpdater implements PointUpdater
 				rp.setPosition( rp.getDoublePosition( 1 ) + dy * sigma[ dist ], 1 );
 			}
 		}
+	}
+
+	public static double[] sigmas( final double sigma, final boolean normalize )
+	{
+		double[] sigmaTmp = Util.createGaussianKernel1DDouble( sigma, false );
+		double[] sigmas = new double[ sigmaTmp.length / 2 + 1 ];
+
+		// take only the second half [ 1 ... 0 ]
+		for ( int i = sigmaTmp.length / 2; i < sigmaTmp.length; ++i )
+			sigmas[ i - sigmaTmp.length / 2 ] = sigmaTmp[ i ];
+
+		if ( normalize )
+		{
+			double sum = 0;
+			for ( final double value : sigmas )
+				sum += value;
+
+			for ( int i = 0; i < sigmas.length; ++i )
+				sigmas[ i ] /= sum;
+		}
+
+		return sigmas;
 	}
 
 	public static final double dist( final RealPoint p1, final RealPoint p2 )

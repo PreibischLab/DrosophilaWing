@@ -8,18 +8,19 @@ public class Segment
 	
 	final int id;
 	int area;
+	float value;
 	final ArrayList< int[] > pixels  = new ArrayList< int[] >();
 
 	public Segment( final int id )
 	{
-		this.id = id;
-		this.area = -1;
+		this( id, -1 );
 	}
 
 	public Segment( final int id, final int area )
 	{
 		this.id = id;
 		this.area = area;
+		this.value = 0;
 	}
 
 	public ArrayList< int[] > pixels() { return pixels; }
@@ -27,6 +28,9 @@ public class Segment
 	public int area() { return area; }
 	public void setArea( final int area ) { this.area = area; }
 	public void incArea() { ++area; }
+	public float value() { return value; }
+
+	public void setValue( final float value ) { this.value = value; }
 
 	public double invCircularity()
 	{

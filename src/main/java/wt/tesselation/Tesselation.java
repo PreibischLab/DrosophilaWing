@@ -385,6 +385,20 @@ public class Tesselation
 		}
 	}
 
+	final public static void drawValue( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img )
+	{
+		final RandomAccess< Segment > ra = randomAccessible.randomAccess();
+		final RandomAccess< FloatType > ri = img.randomAccess();
+	
+		for ( final int[] ml : mask )
+		{
+			ra.setPosition( ml );
+			ri.setPosition( ml );
+
+			ri.get().set( ra.get().value() );
+		}
+	}
+
 	protected final static int[][] makeMask( final Interval interval, final Roi r )
 	{
 		int numElements = 0;
