@@ -10,7 +10,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import mpicbg.imglib.multithreading.SimpleMultiThreading;
 import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
@@ -34,10 +33,14 @@ public class TesselationMultiThread
 		final int targetArea = 200;
 
 		final Img< FloatType > img = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
+		final Img< FloatType > imgGlobal = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 
 		final ImagePlus imp = new ImagePlus( "voronoi", Alignment.wrap( img ) );
 		imp.setDisplayRange( 0, targetArea * 2 );
 		imp.show();
+
+		final ImagePlus impGlobal = new ImagePlus( "voronoiGlobal", Alignment.wrap( imgGlobal ) );
+		impGlobal.show();
 
 		final ArrayList< Pair< TesselationThread, Thread > > threads = new ArrayList< Pair< TesselationThread, Thread > >();
 
@@ -76,8 +79,8 @@ public class TesselationMultiThread
 		*/
 
 		// expand/shrink?
-		
-		for ( int i = 0; i < 10; ++i )
+		/*
+		for ( int i = 0; i < 1000; ++i )
 		{
 			if ( imp.getOverlay() != null )
 				imp.getOverlay().clear();
@@ -86,13 +89,13 @@ public class TesselationMultiThread
 			{
 				final TesselationThread t = pair.getA();
 	
-				t.computeGlobalError( t.numPoints()/5, true, null );
+				t.computeGlobalError( t.numPoints()/15, true, null );
 				Tesselation.drawValue( t.mask(), t.search().randomAccessible, img );
 
 				if ( i == 0 )
 					continue;
 	
-				t.expandShrink( t.numPoints()/5, 10, imp );
+				t.expandShrink( t.numPoints()/15, imp );
 	
 				//Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
 				//Tesselation.drawValue( t.mask(), t.search().randomAccessible, img );
@@ -103,34 +106,36 @@ public class TesselationMultiThread
 				imp.resetDisplayRange();
 
 			imp.updateAndDraw();
+			imp.setTitle( "error_iteration_" + i );
+			new FileSaver( imp ).saveAsZip( "movie/voronoi_" + i + ".zip" );
 			//SimpleMultiThreading.threadHaltUnClean();
-			SimpleMultiThreading.threadWait( 2000 );
+			SimpleMultiThreading.threadWait( 100 );
 		}
-		
+
 		for ( final Pair< TesselationThread, Thread > pair : threads )
-		{
-			final TesselationThread t = pair.getA();
-			Tesselation.drawValue( t.mask(), t.search().randomAccessible, img );
-		}
-		imp.updateAndDraw();
+			writePoints( pair.getA() );
 
 		SimpleMultiThreading.threadHaltUnClean();
+		*/
+
 
 		for ( final Pair< TesselationThread, Thread > pair : threads )
 		{
 			final TesselationThread t = pair.getA();
 
-			System.out.println( t.id() + ": Area = " + t.area() );
-			System.out.println( t.id() + ": TargetArea = " + t.targetArea() );
-			System.out.println( t.id() + ": #Points = " + t.numPoints() + "\t" );
+			//System.out.println( t.id() + ": Area = " + t.area() );
+			//System.out.println( t.id() + ": TargetArea = " + t.targetArea() );
+			//System.out.println( t.id() + ": #Points = " + t.numPoints() + "\t" );
 			printCurrentState( t );
 
 			pair.getB().start();
 		}
 
+		int currentIteration = 0;
+
 		do
 		{
-			int currentIteration = threads.get( 0 ).getA().iteration();
+			currentIteration = threads.get( 0 ).getA().iteration();
 
 			// order all threads to run the next iteration
 			for ( final Pair< TesselationThread, Thread > pair : threads )
@@ -169,7 +174,9 @@ public class TesselationMultiThread
 					printCurrentState( t );
 
 					// update the drawing
+					t.computeGlobalError( t.numPoints()/15, true, null );
 					Tesselation.drawArea( t.mask(), t.search().randomAccessible, img );
+					Tesselation.drawValue( t.mask(), t.search().randomAccessible, imgGlobal );
 					//Tesselation.drawOverlay( imp, t.locationMap().values() );
 				}
 			}
@@ -177,6 +184,8 @@ public class TesselationMultiThread
 			if ( anyUpdated )
 			{
 				imp.updateAndDraw();
+				impGlobal.updateAndDraw();
+				imp.setTitle( "error_iteration_" + currentIteration );
 				new FileSaver( imp ).saveAsZip( "movie/voronoi_" + currentIteration + ".zip" );
 			}
 
@@ -184,22 +193,30 @@ public class TesselationMultiThread
 			{
 				for ( final Pair< TesselationThread, Thread > pair : threads )
 				{
-					final PrintWriter out = TextFileAccess.openFileWrite( "segment_" + pair.getA().id() + ".points.txt" );
-
-					for ( final Segment s : pair.getA().search().realInterval )
-					{
-						final RealPoint p = pair.getA().locationMap().get( s.id() );
-						out.println( s.id() + "\t" + p.getDoublePosition( 0 ) + "\t" + p.getDoublePosition( 1 ) );
-					}
-					
-					out.close();
+					writePoints( pair.getA() );
 
 					// write out after every 1000 iterations at least
 					pair.getA().logFile().flush();
 				}
 			}
 		}
-		while ( true );
+		while ( currentIteration != -10 );
+
+		for ( final Pair< TesselationThread, Thread > pair : threads )
+			pair.getA().logFile().close();
+	}
+
+	protected void writePoints( final TesselationThread t )
+	{
+		final PrintWriter out = TextFileAccess.openFileWrite( "segment_" + t.id() + ".points.txt" );
+
+		for ( final Segment s : t.search().realInterval )
+		{
+			final RealPoint p = t.locationMap().get( s.id() );
+			out.println( s.id() + "\t" + p.getDoublePosition( 0 ) + "\t" + p.getDoublePosition( 1 ) );
+		}
+		
+		out.close();
 	}
 
 	protected String currentState( final TesselationThread t )
@@ -238,7 +255,7 @@ public class TesselationMultiThread
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
 		for ( int i = 0; i < segments.size(); ++i )
-			currentState.add( new File( "movie_1/segment_" + i + ".points.txt" ) );
+			currentState.add( new File( "movie_localglobal/segment_" + i + ".points.txt" ) );
 
 		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
 	}

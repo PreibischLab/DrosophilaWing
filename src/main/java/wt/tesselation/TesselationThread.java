@@ -15,8 +15,6 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.python.antlr.PythonParser.continue_stmt_return;
-
 import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.IterableRealInterval;
 import net.imglib2.RandomAccess;
@@ -37,6 +35,7 @@ public class TesselationThread implements Runnable
 	final private int targetArea;
 	final private double targetCircle;
 
+	final Roi r;
 	final private int[][] mask;
 	final private int area;
 	final private int numPoints, id;
@@ -67,6 +66,7 @@ public class TesselationThread implements Runnable
 	{
 		this.targetArea = targetArea;
 
+		this.r = r;
 		this.mask = Tesselation.makeMask( img, r );
 		this.area = mask.length;
 		this.numPoints = area / targetArea;
@@ -215,7 +215,7 @@ public class TesselationThread implements Runnable
 		error = computeLocalError( errorArea, errorCirc );
 	}
 
-	public void expandShrink( final int neighbors, final double scaleFactor, final ImagePlus imp )
+	public double expandShrink( final int neighbors, final ImagePlus imp )
 	{
 		// backup all locations as we update the positions on the way
 		final HashMap< Integer, RealPoint > backup = new HashMap< Integer, RealPoint >();
@@ -224,9 +224,9 @@ public class TesselationThread implements Runnable
 			backup.put( i, new RealPoint( locationMap.get( i ) ) );
 
 		final HashMap< Integer, Double > forces = new HashMap< Integer, Double >();
-		double error = computeGlobalError( neighbors, true, forces );
+		computeGlobalError( neighbors, true, forces );
 
-		System.out.println( id() + "\t" + error );
+		//System.out.println( id() + "\t" + error );
 
 		//if ( imp != null )
 		//	drawForces( imp, forces, locationMap );
@@ -235,7 +235,7 @@ public class TesselationThread implements Runnable
 		// compute the new locations
 		//
 
-		final double sigma = 100;
+		final double sigma = 10000;
 		final double two_sq_sigma = 2 * sigma * sigma;
 
 		for ( final Segment s : search.realInterval )
@@ -256,7 +256,7 @@ public class TesselationThread implements Runnable
 					continue;
 
 				final RealPoint lp = backup.get( p.id() );
-				final double force = Math.sqrt( Math.abs( forces.get( p.id() ) ) ) * Math.signum( forces.get( p.id() ) );
+				final double force = forces.get( p.id() );//Math.sqrt( Math.abs( forces.get( p.id() ) ) ) * Math.signum( forces.get( p.id() ) );
 				final double dist = DistancePointUpdater.dist( ls, lp );
 				final double vx = ( xs - lp.getDoublePosition( 0 ) ) / dist;
 				final double vy = ( ys - lp.getDoublePosition( 1 ) ) / dist;
@@ -271,7 +271,12 @@ public class TesselationThread implements Runnable
 			final double vx = svx/sw;
 			final double vy = svy/sw;
 
-			locationMap.get( s.id() ).setPosition( new double[]{ xs + vx, ys + vy } );
+			final double xs_new = xs + vx;
+			final double ys_new = ys + vy;
+
+			// do not push outside of the ROI
+			if ( r.contains( (int)Math.round( xs_new ), (int)Math.round( ys_new ) ))
+				locationMap.get( s.id() ).setPosition( new double[]{ xs_new, ys_new } );
 		}
 
 		// update the image, area, etc.
@@ -285,6 +290,8 @@ public class TesselationThread implements Runnable
 
 		if ( imp != null )
 			drawExpandShrink( imp, locationMap.values(), backup.values() );
+
+		return sigma;
 	}
 
 	protected void drawForces( final ImagePlus imp, final HashMap< Integer, Double > forces, final HashMap< Integer, RealPoint > locations )
@@ -348,119 +355,134 @@ public class TesselationThread implements Runnable
 	private boolean runIteration()
 	{
 		++iteration;
-
-		// select the next segment to try to change
-		Segment next;
-		int knearest = 4;
-
-		if ( iteration % 5 == 0 )
-			next = Tesselation.randomSegment( search.realInterval, rnd );
-		else if ( iteration % 5 == 1 )
-			next = Tesselation.smallestSegment( search.realInterval );
-		else if ( iteration % 5 == 2 )
-			next = Tesselation.largestSegment( search.realInterval );
-		else if ( iteration % 5 == 3 )
-			next = Tesselation.randomSegment( search.realInterval, rnd );
-		else
-			next = Tesselation.maxInvCircularSegment( search.realInterval );
-
-		// select a close neighbor to the smallest, largest or random segment
-		next = Tesselation.neighborSegment( locationMap.get( next.id() ), search.kdTree, knearest, rnd );
-
-		// backup all locations
-		final ArrayList< RealPoint > backup = new ArrayList< RealPoint >();
-		
-		for ( final RealPoint p : locationMap.values() )
-			backup.add( new RealPoint( p ) );
-		
-		// try to change the largest or the smallest
-		final RealPoint p = locationMap.get( next.id() );
-
-		double minError = error;
-		double bestdx = 0;
-		double bestdy = 0;
-		int bestDir = -1;
-		double bestDist = -1;
-		
-		double[] dist = new double[]{ -64, -32, -16, -8, -4, 4, 8, 16, 32, 64 };
-		double[] sigmas = new double[]{ 40, 20, 10, 5, 0 };
-
-		final double factor = getLocalErrorFactor( error );
-		
-		for ( int i = 0; i < dist.length; ++i )
-			dist[ i ] /= Math.max( 0.1, factor );
-
-		for ( int i = 0; i < sigmas.length; ++i )
-			sigmas[ i ] /= Math.max( 1, factor*10.0 );
-
-		// randomly select one of the sigmas
-		final double sigma = sigmas[ rnd.nextInt( sigmas.length ) ];
-		final PointUpdater updater;
-		
-		if ( sigma == 0.0 )
-			updater = new SimplePointUpdater();
-		else
-			updater = new DistancePointUpdater( sigma );
-
-		for ( int i = 0; i < dist.length; ++i )
-			for ( int dir = 0; dir <= 1; ++dir )
-			{
-				double dx = 0;
-				double dy = 0;
-
-				if ( dir == 0 )
-					dx = dist[ i ];
-				else
-					dy = dist[ i ];
-
-				updater.updatePoints( p, locationMap.values(), dx, dy );
-
-				update( mask, search );
-
-				final double errorA = normLocalError( errorMetricArea.computeError( search.realInterval, targetArea ) );
-				final double errorC = normLocalError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
-				final double errorTest = errorA + 300*errorC;
-
-				if ( errorTest < minError )
-				{
-					minError = errorTest;
-					bestdx = dx;
-					bestdy = dy;
-					bestDir = dir;
-					bestDist = dist[ i ];
-				}
-				
-				// restore positions
-				int j = 0;
-				for ( final RealPoint rp : locationMap.values() )
-					rp.setPosition( backup.get( j++ ) );
-			}
-
-		// apply the best choice
-		if ( bestDir >= 0 )
-			updater.updatePoints( p, locationMap.values(), bestdx, bestdy );
-
-		// update the image, area, etc.
-		update( mask, search );
-
-		errorArea = normLocalError( errorMetricArea.computeError( search.realInterval, targetArea ) );
-		errorCirc = normLocalError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
-		error = computeLocalError( errorArea, errorCirc );
-
-		if ( bestDir != -1 )
+		/*
+		if ( iteration % 200 == rnd.nextInt( 200 ) )
 		{
-			lastDX = bestdx;
-			lastDY = bestdy;
-			lastDir = bestDir;
-			lastDist = bestDist;
-			lastSigma = sigma;
+			lastSigma = expandShrink( numPoints()/15, null );
+
+			lastDX = 0;
+			lastDY = 0;
+			lastDir = 0xf;
+			lastDist = 0;
 			lastIteration = iteration;
 
-			return true;
+			return true; // updated
 		}
-		else
+		else*/
 		{
-			return false;
+			// select the next segment to try to change
+			Segment next;
+			int knearest = 4;
+	
+			if ( iteration % 5 == 0 )
+				next = Tesselation.randomSegment( search.realInterval, rnd );
+			else if ( iteration % 5 == 1 )
+				next = Tesselation.smallestSegment( search.realInterval );
+			else if ( iteration % 5 == 2 )
+				next = Tesselation.largestSegment( search.realInterval );
+			else if ( iteration % 5 == 3 )
+				next = Tesselation.randomSegment( search.realInterval, rnd );
+			else
+				next = Tesselation.maxInvCircularSegment( search.realInterval );
+	
+			// select a close neighbor to the smallest, largest or random segment
+			next = Tesselation.neighborSegment( locationMap.get( next.id() ), search.kdTree, knearest, rnd );
+	
+			// backup all locations
+			final ArrayList< RealPoint > backup = new ArrayList< RealPoint >();
+			
+			for ( final RealPoint p : locationMap.values() )
+				backup.add( new RealPoint( p ) );
+			
+			// try to change the largest or the smallest
+			final RealPoint p = locationMap.get( next.id() );
+	
+			double minError = error;
+			double bestdx = 0;
+			double bestdy = 0;
+			int bestDir = -1;
+			double bestDist = -1;
+			
+			double[] dist = new double[]{ -64, -32, -16, -8, -4, 4, 8, 16, 32, 64 };
+			double[] sigmas = new double[]{ 40, 20, 10, 5, 0 };
+	
+			final double factor = getLocalErrorFactor( error );
+			
+			for ( int i = 0; i < dist.length; ++i )
+				dist[ i ] /= Math.max( 0.1, factor );
+	
+			for ( int i = 0; i < sigmas.length; ++i )
+				sigmas[ i ] /= Math.max( 1, factor*10.0 );
+	
+			// randomly select one of the sigmas
+			final double sigma = sigmas[ rnd.nextInt( sigmas.length ) ];
+			final PointUpdater updater;
+			
+			if ( sigma == 0.0 )
+				updater = new SimplePointUpdater();
+			else
+				updater = new DistancePointUpdater( sigma );
+	
+			for ( int i = 0; i < dist.length; ++i )
+				for ( int dir = 0; dir <= 1; ++dir )
+				{
+					double dx = 0;
+					double dy = 0;
+	
+					if ( dir == 0 )
+						dx = dist[ i ];
+					else
+						dy = dist[ i ];
+	
+					updater.updatePoints( p, locationMap.values(), dx, dy );
+	
+					update( mask, search );
+	
+					final double errorA = normLocalError( errorMetricArea.computeError( search.realInterval, targetArea ) );
+					final double errorC = normLocalError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
+					final double errorTest = errorA + 300*errorC;
+	
+					if ( errorTest < minError )
+					{
+						minError = errorTest;
+						bestdx = dx;
+						bestdy = dy;
+						bestDir = dir;
+						bestDist = dist[ i ];
+					}
+					
+					// restore positions
+					int j = 0;
+					for ( final RealPoint rp : locationMap.values() )
+						rp.setPosition( backup.get( j++ ) );
+				}
+	
+			// apply the best choice
+			if ( bestDir >= 0 )
+				updater.updatePoints( p, locationMap.values(), bestdx, bestdy );
+	
+			// update the image, area, etc.
+			update( mask, search );
+	
+			errorArea = normLocalError( errorMetricArea.computeError( search.realInterval, targetArea ) );
+			errorCirc = normLocalError( errorMetricCirc.computeError( search.realInterval, targetCircle ) );
+			error = computeLocalError( errorArea, errorCirc );
+	
+			if ( bestDir != -1 )
+			{
+				lastDX = bestdx;
+				lastDY = bestdy;
+				lastDir = bestDir;
+				lastDist = bestDist;
+				lastSigma = sigma;
+				lastIteration = iteration;
+	
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 
