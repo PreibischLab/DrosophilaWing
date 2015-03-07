@@ -30,6 +30,31 @@ public class Segment
 	public void incArea() { ++area; }
 	public float value() { return value; }
 
+	public double[] centerOfMass()
+	{
+		final double[] c = new double[ 2 ];
+		centerOfMass( c );
+		return c;
+	}
+
+	public void centerOfMass( final double[] c )
+	{
+		double xp = 0;
+		double yp = 0;
+
+		for ( final int[] p : pixels )
+		{
+			xp += p[ 0 ];
+			yp += p[ 1 ];
+		}
+
+		xp /= (double)pixels.size();
+		yp /= (double)pixels.size();
+
+		c[ 0 ] = xp;
+		c[ 1 ] = yp;
+	}
+
 	public void setValue( final float value ) { this.value = value; }
 
 	public double invCircularity()

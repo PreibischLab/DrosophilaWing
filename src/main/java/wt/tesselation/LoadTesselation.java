@@ -15,12 +15,12 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
 import wt.alignment.Alignment;
 
-public class DisplayTesselation
+public class LoadTesselation
 {
 	final ImagePlus impArea, impId;
 	final Img< FloatType > imgArea, imgId;
 
-	public DisplayTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState, final boolean normalizeIds )
+	public LoadTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState, final boolean normalizeIds )
 	{
 		final int targetArea = 200;
 
@@ -36,12 +36,12 @@ public class DisplayTesselation
 		for ( int i = 0; i < segments.size(); ++i )
 		{
 			final TesselationThread tt = new TesselationThread( i, segments.get( i ), imgArea, targetArea, currentState.get( i ) );
-			Tesselation.drawArea( tt.mask(), tt.search().randomAccessible, imgArea );
+			TesselationTools.drawArea( tt.mask(), tt.search().randomAccessible, imgArea );
 
 			if ( normalizeIds )
-				Tesselation.drawId( tt.mask(), tt.search().randomAccessible, imgId, tt.search().realInterval );
+				TesselationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId, tt.search().realInterval );
 			else
-				Tesselation.drawId( tt.mask(), tt.search().randomAccessible, imgId );
+				TesselationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId );
 		}
 
 		impArea.updateAndDraw();
@@ -62,14 +62,14 @@ public class DisplayTesselation
 
 		final ImagePlus wingImp = new ImagePlus( wingFile.getAbsolutePath() );
 
-		final List< Roi > segments = Tesselation.loadROIs( Tesselation.assembleSegments( roiDirectory ) );
+		final List< Roi > segments = TesselationTools.loadROIs( TesselationTools.assembleSegments( roiDirectory ) );
 
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
 		for ( int i = 0; i < segments.size(); ++i )
 			currentState.add( new File( "movie_localglobal_local/segment_" + i + ".points.txt" ) );
 
-		final DisplayTesselation dt = new DisplayTesselation( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState, true );
+		final LoadTesselation dt = new LoadTesselation( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState, true );
 
 		dt.impArea().show();
 		dt.impId().resetDisplayRange();

@@ -67,14 +67,14 @@ public class TesselationThread implements Runnable
 		this.targetArea = targetArea;
 
 		this.r = r;
-		this.mask = Tesselation.makeMask( img, r );
+		this.mask = TesselationTools.makeMask( img, r );
 		this.area = mask.length;
 		this.numPoints = area / targetArea;
 		this.locationMap = new HashMap< Integer, RealPoint >();
 		if ( currentState == null )
-			this.search = new Search( Tesselation.createRandomPoints( img, numPoints, r, locationMap ) );
+			this.search = new Search( TesselationTools.createRandomPoints( img, numPoints, r, locationMap ) );
 		else
-			this.search = new Search( Tesselation.loadPoints( currentState, img.numDimensions(), numPoints, locationMap ) );
+			this.search = new Search( TesselationTools.loadPoints( currentState, img.numDimensions(), numPoints, locationMap ) );
 
 		this.rnd = new Random( 1353 );
 		this.errorMetricArea = new QuadraticError();
@@ -229,7 +229,7 @@ public class TesselationThread implements Runnable
 		//System.out.println( id() + "\t" + error );
 
 		//if ( imp != null )
-		//	drawForces( imp, forces, locationMap );
+		//	TesselationTools.drawForces( imp, forces, locationMap );
 
 		//
 		// compute the new locations
@@ -289,64 +289,9 @@ public class TesselationThread implements Runnable
 		error = computeGlobalError( neighbors, true, forces );
 
 		if ( imp != null )
-			drawExpandShrink( imp, locationMap.values(), backup.values() );
+			TesselationTools.drawExpandShrink( imp, locationMap.values(), backup.values() );
 
 		return sigma;
-	}
-
-	protected void drawForces( final ImagePlus imp, final HashMap< Integer, Double > forces, final HashMap< Integer, RealPoint > locations )
-	{
-		Overlay o = imp.getOverlay();
-		
-		if ( o == null )
-		{
-			o = new Overlay();
-			imp.setOverlay( o );
-		}
-
-		for ( final int id : locations.keySet() )
-		{
-			final double force = forces.get( id );
-			final int absforce = Math.abs( (int)Math.round( force ) );
-			final RealPoint p = locations.get( id );
-
-			final OvalRoi or = new OvalRoi( Util.round( p.getFloatPosition( 0 ) - absforce/2 ), Util.round( p.getFloatPosition( 1 ) - absforce/2 ), absforce, absforce );
-
-			if ( force >= 0 )
-				or.setStrokeColor( Color.red );
-			else
-				or.setStrokeColor( Color.blue );
-
-			o.add( or );
-		}
-	}
-
-	protected void drawExpandShrink( final ImagePlus imp, final Iterable< RealPoint > now, final Iterable< RealPoint > before )
-	{
-		Overlay o = imp.getOverlay();
-		
-		if ( o == null )
-		{
-			o = new Overlay();
-			imp.setOverlay( o );
-		}
-
-		final Iterator< RealPoint > a = now.iterator();
-		final Iterator< RealPoint > b = before.iterator();
-
-		while ( a.hasNext() )
-		{
-			final RealPoint to = a.next();
-			final RealPoint from = b.next();
-
-			final Line lr = new Line(
-					Math.round( from.getFloatPosition( 0 ) ), Math.round( from.getFloatPosition( 1 ) ),
-					Math.round( to.getFloatPosition( 0 ) ), Math.round( to.getFloatPosition( 1 ) ) );
-
-			lr.setStrokeColor( Color.red );
-
-			o.add( lr );
-		}
 	}
 
 	/**
@@ -375,18 +320,18 @@ public class TesselationThread implements Runnable
 			int knearest = 4;
 	
 			if ( iteration % 5 == 0 )
-				next = Tesselation.randomSegment( search.realInterval, rnd );
+				next = TesselationTools.randomSegment( search.realInterval, rnd );
 			else if ( iteration % 5 == 1 )
-				next = Tesselation.smallestSegment( search.realInterval );
+				next = TesselationTools.smallestSegment( search.realInterval );
 			else if ( iteration % 5 == 2 )
-				next = Tesselation.largestSegment( search.realInterval );
+				next = TesselationTools.largestSegment( search.realInterval );
 			else if ( iteration % 5 == 3 )
-				next = Tesselation.randomSegment( search.realInterval, rnd );
+				next = TesselationTools.randomSegment( search.realInterval, rnd );
 			else
-				next = Tesselation.maxInvCircularSegment( search.realInterval );
+				next = TesselationTools.maxInvCircularSegment( search.realInterval );
 	
 			// select a close neighbor to the smallest, largest or random segment
-			next = Tesselation.neighborSegment( locationMap.get( next.id() ), search.kdTree, knearest, rnd );
+			next = TesselationTools.neighborSegment( locationMap.get( next.id() ), search.kdTree, knearest, rnd );
 	
 			// backup all locations
 			final ArrayList< RealPoint > backup = new ArrayList< RealPoint >();
