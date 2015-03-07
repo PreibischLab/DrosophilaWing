@@ -1,4 +1,4 @@
-package wt;
+package wt.alignment;
 
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.NoninvertibleModelException;

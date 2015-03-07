@@ -19,7 +19,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
-import wt.Alignment;
+import wt.alignment.Alignment;
 
 public class TesselationMultiThread
 {

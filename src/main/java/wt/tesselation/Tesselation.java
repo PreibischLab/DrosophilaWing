@@ -34,7 +34,7 @@ import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
-import wt.Alignment;
+import wt.alignment.Alignment;
 import wt.tesselation.error.CircularityError;
 import wt.tesselation.error.Error;
 import wt.tesselation.error.QuadraticError;

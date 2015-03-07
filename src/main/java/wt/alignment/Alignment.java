@@ -1,4 +1,4 @@
-package wt;
+package wt.alignment;
 
 import ij.IJ;
 import ij.ImageJ;

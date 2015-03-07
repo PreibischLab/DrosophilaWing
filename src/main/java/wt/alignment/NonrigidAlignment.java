@@ -1,4 +1,4 @@
-package wt;
+package wt.alignment;
 
 import ij.ImagePlus;
 import mpicbg.models.AbstractAffineModel2D;

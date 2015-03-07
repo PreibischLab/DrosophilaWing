@@ -13,7 +13,7 @@ import net.imglib2.Interval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
-import wt.Alignment;
+import wt.alignment.Alignment;
 
 public class DisplayTesselation
 {
