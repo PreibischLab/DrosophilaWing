@@ -1,0 +1,7 @@
+optimization with a combination of local&global optimization, run until iteration=9000
+
+if ( iteration % 200 == rnd.nextInt( 200 ) )
+	lastSigma = expandShrink( numPoints()/15, null );
+
+// global error
+final double sigma = 10000;

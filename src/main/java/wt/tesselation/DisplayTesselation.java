@@ -67,7 +67,7 @@ public class DisplayTesselation
 		// load existing state
 		final List< File > currentState = new ArrayList< File >();
 		for ( int i = 0; i < segments.size(); ++i )
-			currentState.add( new File( "segment_" + i + ".points.txt" ) );
+			currentState.add( new File( "movie_localglobal_local/segment_" + i + ".points.txt" ) );
 
 		final DisplayTesselation dt = new DisplayTesselation( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState, true );
 
