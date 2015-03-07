@@ -1,28 +1,21 @@
 package wt.tesselation;
 
 import ij.ImagePlus;
-import ij.gui.Line;
-import ij.gui.OvalRoi;
-import ij.gui.Overlay;
 import ij.gui.Roi;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import mpicbg.spim.io.TextFileAccess;
+import net.imglib2.Interval;
 import net.imglib2.IterableRealInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RealPoint;
-import net.imglib2.img.Img;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Util;
 import wt.tesselation.error.CircularityError;
 import wt.tesselation.error.Error;
 import wt.tesselation.error.QuadraticError;
@@ -57,48 +50,30 @@ public class TesselationThread implements Runnable
 
 	private PrintWriter logFile;
 
-	public TesselationThread( final int id, final Roi r, final Img< FloatType > img, final int targetArea )
+	public TesselationThread( final int id, final Roi r, final Interval interval, final int targetArea )
 	{
-		this( id, r, img, targetArea, null );
+		this( id, r, interval, targetArea, null );
 	}
 
-	public TesselationThread( final int id, final Roi r, final Img< FloatType > img, final int targetArea, final File currentState )
+	public TesselationThread( final int id, final Roi r, final Interval interval, final int targetArea, final File currentState )
 	{
 		this.targetArea = targetArea;
 
 		this.r = r;
-		this.mask = TesselationTools.makeMask( img, r );
+		this.mask = TesselationTools.makeMask( interval, r );
 		this.area = mask.length;
 		this.numPoints = area / targetArea;
 		this.locationMap = new HashMap< Integer, RealPoint >();
 		if ( currentState == null )
-			this.search = new Search( TesselationTools.createRandomPoints( img, numPoints, r, locationMap ) );
+			this.search = new Search( TesselationTools.createRandomPoints( interval, numPoints, r, locationMap ) );
 		else
-			this.search = new Search( TesselationTools.loadPoints( currentState, img.numDimensions(), numPoints, locationMap ) );
+			this.search = new Search( TesselationTools.loadPoints( currentState, interval.numDimensions(), numPoints, locationMap ) );
 
 		this.rnd = new Random( 1353 );
 		this.errorMetricArea = new QuadraticError();
 		this.errorMetricCirc = new CircularityError();
 		this.id = id;
-
-		if ( new File( "log_segment_" + id() + ".txt" ).exists() )
-		{
-			int updateId = 0;
-
-			File file;
-
-			do
-			{
-				++updateId;
-				file = new File( "log_segment_" + id() + "_" + updateId + ".txt" );
-			}
-			while ( file.exists() );
-			this.logFile = TextFileAccess.openFileWrite( file );
-		}
-		else
-		{
-			this.logFile = TextFileAccess.openFileWrite( new File( "log_segment_" + id() + ".txt" ) );
-		}
+		this.logFile = null; // just open it once it is actually requested
 
 		// initial compute areas
 		update( mask, search );
@@ -122,7 +97,32 @@ public class TesselationThread implements Runnable
 	public double errorCirc() { return errorCirc; }
 	public double errorArea() { return errorArea; }
 	public int iteration() { return iteration; }
-	public PrintWriter logFile() { return logFile; }
+	public PrintWriter logFile()
+	{
+		if ( this.logFile == null )
+		{
+			if ( new File( "log_segment_" + id() + ".txt" ).exists() )
+			{
+				int updateId = 0;
+
+				File file;
+
+				do
+				{
+					++updateId;
+					file = new File( "log_segment_" + id() + "_" + updateId + ".txt" );
+				}
+				while ( file.exists() );
+				this.logFile = TextFileAccess.openFileWrite( file );
+			}
+			else
+			{
+				this.logFile = TextFileAccess.openFileWrite( new File( "log_segment_" + id() + ".txt" ) );
+			}
+		}
+
+		return logFile;
+	}
 
 	public IterableRealInterval< Segment > pointList() { return search.realInterval; }
 	public Search search() { return search; }

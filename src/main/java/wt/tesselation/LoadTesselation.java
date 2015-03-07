@@ -8,7 +8,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
@@ -17,63 +16,105 @@ import wt.alignment.Alignment;
 
 public class LoadTesselation
 {
-	final ImagePlus impArea, impId;
-	final Img< FloatType > imgArea, imgId;
+	final Interval interval;
+	final List< Roi > segments;
+	final int targetArea;
+	final ArrayList< TesselationThread> threads;
 
-	public LoadTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState, final boolean normalizeIds )
+	ImagePlus impArea, impId;
+	Img< FloatType > imgArea, imgId;
+
+	public LoadTesselation( final File roiDirectory )
 	{
-		final int targetArea = 200;
+		this(
+				TesselationTools.templateDimensions( roiDirectory ),
+				TesselationTools.loadROIs( TesselationTools.assembleSegments( roiDirectory ) ),
+				TesselationTools.assemblePoints( roiDirectory ) );
+	}
 
-		this.imgArea = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
-		this.imgId = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
+	public LoadTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState )
+	{
+		this.targetArea = 200;
+		this.interval = interval;
+		this.segments = segments;
 
-		this.impArea = new ImagePlus( "voronoiArea", Alignment.wrap( imgArea ) );
-		impArea.setDisplayRange( 0, targetArea * 2 );
-
-		this.impId = new ImagePlus( "voronoiId", Alignment.wrap( imgId ) );
-		impId.setDisplayRange( 0, targetArea * 2 );
-
+		this.threads = new ArrayList< TesselationThread >();
 		for ( int i = 0; i < segments.size(); ++i )
-		{
-			final TesselationThread tt = new TesselationThread( i, segments.get( i ), imgArea, targetArea, currentState.get( i ) );
-			TesselationTools.drawArea( tt.mask(), tt.search().randomAccessible, imgArea );
+			this.threads.add( new TesselationThread( i, segments.get( i ), interval, targetArea, currentState.get( i ) ) );
+	}
 
+	public void renderIdImage( final boolean normalizeIds )
+	{
+		if ( this.imgId == null || this.impId == null )
+		{
+			this.imgId = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
+			this.impId = new ImagePlus( "voronoiId", Alignment.wrap( imgId ) );
+		}
+
+		for ( final TesselationThread tt : threads )
+		{
 			if ( normalizeIds )
 				TesselationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId, tt.search().realInterval );
 			else
 				TesselationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId );
 		}
 
-		impArea.updateAndDraw();
-		impId.updateAndDraw();
+		this.impId.resetDisplayRange();
+		this.impId.updateAndDraw();
 	}
 
-	public ImagePlus impArea() { return impArea; }
-	public ImagePlus impId() { return impId; }
-	public Img< FloatType > imgArea() { return imgArea; }
-	public Img< FloatType > imgId() { return imgId; }
+	public void renderAreaImage()
+	{
+		this.imgArea = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
+		this.impArea = new ImagePlus( "voronoiArea", Alignment.wrap( imgArea ) );
+		this.impArea.setDisplayRange( 0, targetArea * 2 );
+
+		for ( final TesselationThread tt : threads )
+			TesselationTools.drawArea( tt.mask(), tt.search().randomAccessible, imgArea );
+
+		impArea.updateAndDraw();
+	}
+
+	public ImagePlus impArea()
+	{
+		if ( impArea == null )
+			renderAreaImage();
+
+		return impArea;
+	}
+
+	public ImagePlus impId( final boolean normalizeIds )
+	{
+		if ( impId == null )
+			renderIdImage( normalizeIds );
+
+		return impId;
+	}
+
+	public Img< FloatType > imgArea()
+	{
+		if ( imgArea == null )
+			renderAreaImage();
+		
+		return imgArea;
+	}
+
+	public Img< FloatType > imgId( final boolean normalizeIds )
+	{
+		if ( imgId == null )
+			renderIdImage( normalizeIds );
+
+		return imgId;
+	}
 
 	public static void main( String[] args )
 	{
 		new ImageJ();
 
-		final File roiDirectory = new File( "SegmentedWingTemplate" );
-		final File wingFile = new File( "wing_template_A13_2014_01_31.tif" );
-
-		final ImagePlus wingImp = new ImagePlus( wingFile.getAbsolutePath() );
-
-		final List< Roi > segments = TesselationTools.loadROIs( TesselationTools.assembleSegments( roiDirectory ) );
-
-		// load existing state
-		final List< File > currentState = new ArrayList< File >();
-		for ( int i = 0; i < segments.size(); ++i )
-			currentState.add( new File( "movie_localglobal_local/segment_" + i + ".points.txt" ) );
-
-		final LoadTesselation dt = new LoadTesselation( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState, true );
+		final LoadTesselation dt = new LoadTesselation( new File( "SegmentedWingTemplate" ) );
 
 		dt.impArea().show();
-		dt.impId().resetDisplayRange();
-		dt.impId().show();
+		dt.impId( true ).show();
 	}
 
 }

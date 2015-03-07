@@ -9,7 +9,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
@@ -208,9 +207,6 @@ public class TesselationMultiThread
 		new ImageJ();
 
 		final File roiDirectory = new File( "SegmentedWingTemplate" );
-		final File wingFile = new File( "A12_002.aligned.zip" );
-
-		final ImagePlus wingImp = new ImagePlus( wingFile.getAbsolutePath() );
 
 		final List< Roi > segments = TesselationTools.loadROIs( TesselationTools.assembleSegments( roiDirectory ) );
 
@@ -219,7 +215,7 @@ public class TesselationMultiThread
 		for ( int i = 0; i < segments.size(); ++i )
 			currentState.add( new File( "movie_localglobal/segment_" + i + ".points.txt" ) );
 
-		new TesselationMultiThread( new FinalInterval( wingImp.getWidth(), wingImp.getHeight() ), segments, currentState );
+		new TesselationMultiThread( TesselationTools.templateDimensions( roiDirectory ), segments, currentState );
 	}
 
 }

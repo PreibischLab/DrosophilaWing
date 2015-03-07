@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Random;
 
 import mpicbg.spim.io.TextFileAccess;
+import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.RandomAccess;
@@ -167,6 +168,40 @@ public class TesselationTools
 		}
 	}
 
+	final public static Interval templateDimensions( final File roiDirectory )
+	{
+		if ( !roiDirectory.exists() || !roiDirectory.isDirectory() )
+		{
+			System.out.println( roiDirectory + " does not exist or is no directory." );
+			return null;
+		}
+
+		final File f = new File( roiDirectory.getAbsolutePath(), "templatedims.txt" );
+
+		if ( !f.exists() )
+		{
+			System.out.println( roiDirectory + " does not exist." );
+			return null;
+		}
+
+		try
+		{
+			final BufferedReader in = TextFileAccess.openFileReadEx( f );
+
+			final int x = Integer.parseInt( in.readLine().trim() );
+			final int y = Integer.parseInt( in.readLine().trim() );
+
+			System.out.println( x + " " + y );
+			return new FinalInterval( x, y );
+		}
+		catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println( "Could not load dimensions from '" + f + "': " + e );
+			return null;
+		}
+	}
 	final public static Segment maxInvCircularSegment( final Iterable< Segment > segmentMap )
 	{
 		Segment maxInvCircS = segmentMap.iterator().next();
@@ -430,6 +465,23 @@ public class TesselationTools
 				segments.add( new File( dir, file ) );
 
 		return segments;
+	}
+
+	public static List< File > assemblePoints( final File dir )
+	{
+		if ( !dir.exists() || !dir.isDirectory() )
+			return null;
+
+		final String[] files = dir.list();
+		Arrays.sort( files );
+
+		final ArrayList< File > points = new ArrayList< File >();
+
+		for ( final String file : files )
+			if ( file.toLowerCase().endsWith( ".points.txt" ) )
+				points.add( new File( dir, file ) );
+
+		return points;
 	}
 
 	public static RealPointSampleList< IntType > createEquallySpacedPoints( RealInterval interval, int numPointsX, int numPointsY, final PolygonRoi r )
