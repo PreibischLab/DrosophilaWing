@@ -45,6 +45,7 @@ public class LoadTesselation
 	}
 
 	public List< TesselationThread > tesselations() { return threads; }
+	public Interval interval() { return interval; }
 
 	public void renderIdImage( final boolean normalizeIds )
 	{

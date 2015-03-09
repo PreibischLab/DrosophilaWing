@@ -8,15 +8,19 @@ public class Segment
 	
 	final protected int id;
 	protected int area;
-	protected float value;
+	protected double value;
 	protected final ArrayList< int[] > pixels;
+	public double tmp;
+
+	protected double sumPeakIntensity;
+	protected int numPeaks;
 
 	public Segment( final int id )
 	{
 		this( id, -1, 0, null );
 	}
 
-	public Segment( final int id, final int area, final float value, final ArrayList< int[] > pixels )
+	public Segment( final int id, final int area, final double value, final ArrayList< int[] > pixels )
 	{
 		this.id = id;
 		this.area = area;
@@ -33,9 +37,47 @@ public class Segment
 	public int area() { return area; }
 	public void setArea( final int area ) { this.area = area; }
 	public void incArea() { ++area; }
-	public float value() { return value; }
+	public double value() { return value; }
+	public void setValue( final double value ) { this.value = value; }
+	public int numPeaks() { return numPeaks; }
+	public double sumPeakIntensity() { return sumPeakIntensity; }
 
-	public void setValue( final float value ) { this.value = value; }
+	public double[] centerOfMass()
+	{
+		final double[] c = new double[ 2 ];
+		centerOfMass( c );
+		return c;
+	}
+
+	public void centerOfMass( final double[] c )
+	{
+		double xp = 0;
+		double yp = 0;
+
+		for ( final int[] p : pixels )
+		{
+			xp += p[ 0 ];
+			yp += p[ 1 ];
+		}
+
+		xp /= (double)pixels.size();
+		yp /= (double)pixels.size();
+
+		c[ 0 ] = xp;
+		c[ 1 ] = yp;
+	}
+
+	public void resetPeaks()
+	{
+		this.sumPeakIntensity = 0;
+		this.numPeaks = 0;
+	}
+
+	public void addPeak( final double intensity )
+	{
+		this.sumPeakIntensity += intensity;
+		++this.numPeaks;
+	}
 
 	public double invCircularity()
 	{

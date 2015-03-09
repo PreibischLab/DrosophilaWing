@@ -37,7 +37,7 @@ import net.imglib2.util.Util;
 
 public class TesselationTools
 {
-	public static void drawExpandShrink( final ImagePlus imp, final Iterable< RealPoint > now, final Iterable< RealPoint > before )
+	public static void drawExpandShrink( final ImagePlus imp, final Iterable< ? extends RealPoint > now, final Iterable< ? extends RealPoint > before )
 	{
 		Overlay o = imp.getOverlay();
 		
@@ -47,8 +47,8 @@ public class TesselationTools
 			imp.setOverlay( o );
 		}
 
-		final Iterator< RealPoint > a = now.iterator();
-		final Iterator< RealPoint > b = before.iterator();
+		final Iterator< ? extends RealPoint > a = now.iterator();
+		final Iterator< ? extends RealPoint > b = before.iterator();
 
 		while ( a.hasNext() )
 		{
@@ -65,7 +65,7 @@ public class TesselationTools
 		}
 	}
 
-	public static void drawForces( final ImagePlus imp, final HashMap< Integer, Double > forces, final HashMap< Integer, RealPoint > locations )
+	public static void drawForces( final ImagePlus imp, final HashMap< Integer, Double > forces, final HashMap< Integer, ? extends RealPoint > locations )
 	{
 		Overlay o = imp.getOverlay();
 		
@@ -92,12 +92,12 @@ public class TesselationTools
 		}
 	}
 
-	public final static void drawRealPoint( final ImagePlus imp, final Collection< RealPoint > points )
+	public final static void drawRealPoint( final ImagePlus imp, final Collection< ? extends RealPoint > points )
 	{
 		drawRealPoint( imp, points, Color.red );
 	}
 
-	public final static void drawRealPoint( final ImagePlus imp, final Collection< RealPoint > points, final Color col )
+	public final static void drawRealPoint( final ImagePlus imp, final Collection< ? extends RealPoint > points, final Color col )
 	{
 		Overlay o = imp.getOverlay();
 		
@@ -115,12 +115,12 @@ public class TesselationTools
 		}
 	}
 
-	final public static void drawId( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img )
+	final public static void drawId( final int[][] mask, RandomAccessible< ? extends Segment > randomAccessible, final RandomAccessible< FloatType > img )
 	{
 		drawId( mask, randomAccessible, img, null );
 	}
 
-	final public static void drawId( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img, final Iterable< Segment > segmentMap )
+	final public static void drawId( final int[][] mask, RandomAccessible< ? extends Segment > randomAccessible, final RandomAccessible< FloatType > img, final Iterable< Segment > segmentMap )
 	{
 		float maxId = 1;
 
@@ -130,7 +130,7 @@ public class TesselationTools
 				maxId = Math.max( s.id(), maxId );
 		}
 
-		final RandomAccess< Segment > ra = randomAccessible.randomAccess();
+		final RandomAccess< ? extends Segment > ra = randomAccessible.randomAccess();
 		final RandomAccess< FloatType > ri = img.randomAccess();
 	
 		for ( final int[] ml : mask )
@@ -142,9 +142,9 @@ public class TesselationTools
 		}
 	}
 
-	final public static void drawArea( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img )
+	final public static void drawArea( final int[][] mask, RandomAccessible< ? extends Segment > randomAccessible, final RandomAccessible< FloatType > img )
 	{
-		final RandomAccess< Segment > ra = randomAccessible.randomAccess();
+		final RandomAccess< ? extends Segment > ra = randomAccessible.randomAccess();
 		final RandomAccess< FloatType > ri = img.randomAccess();
 	
 		for ( final int[] ml : mask )
@@ -156,9 +156,9 @@ public class TesselationTools
 		}
 	}
 
-	final public static void drawValue( final int[][] mask, RandomAccessible< Segment > randomAccessible, final RandomAccessible< FloatType > img )
+	final public static void drawValue( final int[][] mask, RandomAccessible< ? extends Segment > randomAccessible, final RandomAccessible< FloatType > img )
 	{
-		final RandomAccess< Segment > ra = randomAccessible.randomAccess();
+		final RandomAccess< ? extends Segment > ra = randomAccessible.randomAccess();
 		final RandomAccess< FloatType > ri = img.randomAccess();
 	
 		for ( final int[] ml : mask )
@@ -166,7 +166,7 @@ public class TesselationTools
 			ra.setPosition( ml );
 			ri.setPosition( ml );
 
-			ri.get().set( ra.get().value() );
+			ri.get().set( (float)ra.get().value() );
 		}
 	}
 

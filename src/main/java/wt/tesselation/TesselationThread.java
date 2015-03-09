@@ -33,7 +33,7 @@ public class TesselationThread implements Runnable
 	final private int area;
 	final private int numPoints, id;
 	final private HashMap< Integer, RealPoint > locationMap;
-	final private Search search;
+	final private Search< Segment > search;
 	final private Random rnd;
 	final private Error errorMetricArea;
 	final private Error errorMetricCirc;
@@ -65,9 +65,9 @@ public class TesselationThread implements Runnable
 		this.numPoints = area / targetArea;
 		this.locationMap = new HashMap< Integer, RealPoint >();
 		if ( currentState == null )
-			this.search = new Search( TesselationTools.createRandomPoints( interval, numPoints, r, locationMap ) );
+			this.search = new Search< Segment >( TesselationTools.createRandomPoints( interval, numPoints, r, locationMap ) );
 		else
-			this.search = new Search( TesselationTools.loadPoints( currentState, interval.numDimensions(), numPoints, locationMap ) );
+			this.search = new Search< Segment >( TesselationTools.loadPoints( currentState, interval.numDimensions(), numPoints, locationMap ) );
 
 		this.rnd = new Random( 1353 );
 		this.errorMetricArea = new QuadraticError();
@@ -126,7 +126,7 @@ public class TesselationThread implements Runnable
 	}
 
 	public IterableRealInterval< Segment > pointList() { return search.realInterval; }
-	public Search search() { return search; }
+	public Search< Segment > search() { return search; }
 	public int[][] mask() { return mask; }
 	public HashMap< Integer, RealPoint > locationMap() { return locationMap; }
 
@@ -432,7 +432,7 @@ public class TesselationThread implements Runnable
 		}
 	}
 
-	final protected static void update( final int[][] mask, final Search search )
+	final protected static void update( final int[][] mask, final Search< Segment > search )
 	{
 		// update the new coordinates for the pointlist
 		search.update();

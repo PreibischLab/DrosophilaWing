@@ -9,27 +9,27 @@ import net.imglib2.neighborsearch.NearestNeighborSearch;
 import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.view.Views;
 
-public class Search
+public class Search< S extends Segment >
 {
 	// point list
-	final IterableRealInterval< Segment > realInterval;
+	final IterableRealInterval< S > realInterval;
 
 	// the factory
-	final NearestNeighborSearchInterpolatorFactory< Segment > factory = new NearestNeighborSearchInterpolatorFactory< Segment >();
+	final NearestNeighborSearchInterpolatorFactory< S > factory = new NearestNeighborSearchInterpolatorFactory< S >();
 
 	// for searching
-	KDTree< Segment > kdTree;
+	KDTree< S > kdTree;
 
 	// using nearest neighbor search we will be able to return a value an any position in space
-	NearestNeighborSearch< Segment > search;
+	NearestNeighborSearch< S > search;
 
 	// make it into RealRandomAccessible using nearest neighbor search
-	RealRandomAccessible< Segment > realRandomAccessible;
+	RealRandomAccessible< S > realRandomAccessible;
 
 	// convert it into a RandomAccessible which can be displayed
-	RandomAccessible< Segment > randomAccessible;
+	RandomAccessible< S > randomAccessible;
 
-	public Search( IterableRealInterval< Segment > realInterval )
+	public Search( final IterableRealInterval< S > realInterval )
 	{
 		this.realInterval = realInterval;
 
@@ -38,11 +38,13 @@ public class Search
 
 	public void update()
 	{
-		this.kdTree = new KDTree< Segment > ( realInterval );
-		this.search = new NearestNeighborSearchOnKDTree< Segment >( kdTree );
+		this.kdTree = new KDTree< S > ( realInterval );
+		this.search = new NearestNeighborSearchOnKDTree< S >( kdTree );
 		this.realRandomAccessible = Views.interpolate( search, factory );
 		this.randomAccessible = Views.raster( realRandomAccessible );
 	}
 
-	public IterableRealInterval< Segment > segments() { return realInterval; }
+	public KDTree< S > kdTree() { return kdTree; }
+	public IterableRealInterval< S > segments() { return realInterval; }
+	public RandomAccessible< S > randomAccessible() { return randomAccessible; }
 }
