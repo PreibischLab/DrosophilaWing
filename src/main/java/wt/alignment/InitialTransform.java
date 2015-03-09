@@ -32,6 +32,8 @@ public class InitialTransform
 	double error;
 	boolean mirror;
 
+	String log = "";
+
 	public InitialTransform( final Img< FloatType > template, final Img< FloatType > wing )
 	{
 		this.template = template;
@@ -42,6 +44,7 @@ public class InitialTransform
 	public List< PointMatch > matches() { return matches; }
 	public double error() { return error; }
 	public boolean mirror() { return mirror; }
+	public String log(){ return log; }
 
 	public List< PointMatch > createUpdatedMatches( final long[] offset )
 	{
@@ -69,11 +72,15 @@ public class InitialTransform
 	{
 		// Perform matching for normal and mirrored image in case the wing is flipped
 		final Pair< Double, List< PointMatch > > normal = computeSIFT( wing, template );
-		IJ.log( "normal: inliers=" + normal.getB().size() + ", error=" + decimalFormat.format( normal.getA() ) );
+		String out = "normal: inliers=" + normal.getB().size() + ", error=" + decimalFormat.format( normal.getA() );
+		IJ.log( out );
+		log += out + "\n";
 
 		Mirror.mirror( wing, 0, Threads.numThreads() );
 		final Pair< Double, List< PointMatch > > mirror = computeSIFT( wing, template );
-		IJ.log( "mirror: inliers=" + mirror.getB().size() + ", error=" + decimalFormat.format( mirror.getA() ) );
+		out = "mirror: inliers=" + mirror.getB().size() + ", error=" + decimalFormat.format( mirror.getA() );
+		IJ.log( out );
+		log += out + "\n";
 
 		final Pair< Double, List< PointMatch > > siftResult;
 
@@ -107,7 +114,9 @@ public class InitialTransform
 			this.model = null;
 			this.matches = null;
 			this.error = Double.NaN;
-			IJ.log( "Initial alignment failed." );
+			out = "Initial alignment failed.";
+			IJ.log( out );
+			log += out + "\n";
 			e.printStackTrace();
 			return false;
 		}

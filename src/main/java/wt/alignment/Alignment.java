@@ -1,15 +1,14 @@
 package wt.alignment;
 
-import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.io.FileSaver;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
 import java.io.File;
 
+import mpicbg.models.AbstractAffineModel2D;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
@@ -25,29 +24,36 @@ import bunwarpj.Transformation;
 
 public class Alignment
 {
-	public ImagePlus aligned = null;
+	protected final InitialTransform transform1;
+	protected ImagePlus aligned = null;
+	protected boolean mirror;
+	protected long[] offset;
+	protected AbstractAffineModel2D< ? > model;
+	protected Transformation t;
+	protected int subsampling;
 
 	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 		// find the initial alignment
-		final InitialTransform transform1 = new InitialTransform( template, wing );
+		this.transform1 = new InitialTransform( template, wing );
 
 		if ( !transform1.findInitialModel() )
 			return;
 
 		if ( transform1.mirror() )
 		{
-			IJ.log( "Mirroring wing" );
+			System.out.println( "Mirroring wing" );
 			Mirror.mirror( wing, 0, Threads.numThreads() );
 			Mirror.mirror( wingGene, 0, Threads.numThreads() );
 		}
 
-		// preprocess and transform
-		long offset;
+		this.mirror = transform1.mirror();
+		this.model = transform1.model();
 
+		// preprocess and transform
 		final Preprocess pTemplate = new Preprocess( template );
 		pTemplate.homogenize();
-		offset = pTemplate.extend( 0.2f, true );
+		this.offset = Util.getArrayFromValue( pTemplate.extend( 0.2f, true ), wing.numDimensions() );
 
 		final Preprocess pWing = new Preprocess( wing );
 		pWing.homogenize();
@@ -55,20 +61,21 @@ public class Alignment
 
 		// transform pWing
 		final AffineModel2D model = new AffineModel2D();
-		model.fit( transform1.createUpdatedMatches( Util.getArrayFromValue( offset, wing.numDimensions() ) ) );
+		model.fit( transform1.createUpdatedMatches( this.offset ) );
 		pWing.transform( model );
 
 		// compute non-rigid alignment
-		final int subSampling = 2;
-		final Transformation t = NonrigidAlignment.align( pWing.output, pTemplate.output, subSampling );
+		this.subsampling = 2;
+		this.t = NonrigidAlignment.align( pWing.output, pTemplate.output, this.subsampling );
 
 		// transform the original images
-		final Img< FloatType > wingAligned = NonrigidAlignment.transformAll( wing, transform1.model(), Util.getArrayFromValue( offset, wing.numDimensions() ), t, subSampling );
-		final Img< FloatType > wingGeneAligned = NonrigidAlignment.transformAll( wingGene, transform1.model(), Util.getArrayFromValue( offset, wing.numDimensions() ), t, subSampling );
+		final Img< FloatType > wingAligned = NonrigidAlignment.transformAll( wing, this.model, this.offset, this.t, this.subsampling );
+		final Img< FloatType > wingGeneAligned = NonrigidAlignment.transformAll( wingGene, this.model, this.offset, this.t, this.subsampling );
 
 		this.aligned = overlay( wingAligned, wingGeneAligned );
 	}
 
+	public boolean saveTransform( final String log, final File file ) { return LoadSaveTransformation.save( log + "\n" + transform1.log, mirror, offset, model, t, subsampling, file ); }
 	public ImagePlus getAlignedImage() { return aligned; }
 
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
@@ -136,6 +143,7 @@ public class Alignment
 		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
 		final File wingFile = new File( "A12_002.tif" );
 		final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() - 4 ) + ".aligned.zip" );
+		final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() - 4 ) + ".aligned.txt" );
 		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
 		final ImagePlus wingImp = new ImagePlus( wingFile.getAbsolutePath() );
 
@@ -146,6 +154,8 @@ public class Alignment
 		final Alignment alignment = new Alignment( template, wing, wingGene );
 
 		final ImagePlus aligned = alignment.getAlignedImage();
-		new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
+		//new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
+		aligned.show();
+		alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
 	}
 }

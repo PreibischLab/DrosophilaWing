@@ -36,10 +36,8 @@ public class NonrigidAlignment
 			{
 				final FloatType f = cursor.next();
 
-				cursor.localize( l1 );
-
-				final double u = ( cursor.getFloatPosition( 0 ) + offset[ 0 ] ) / s;
-				final double v = ( cursor.getFloatPosition( 1 ) + offset[ 1 ] ) / s;
+				final double u = ( cursor.getDoublePosition( 0 ) + offset[ 0 ] ) / s;
+				final double v = ( cursor.getDoublePosition( 1 ) + offset[ 1 ] ) / s;
 
 				t.transform( u, v, l1, true );
 
