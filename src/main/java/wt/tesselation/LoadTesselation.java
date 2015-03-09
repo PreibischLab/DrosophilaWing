@@ -29,14 +29,15 @@ public class LoadTesselation
 		this(
 				TesselationTools.templateDimensions( roiDirectory ),
 				TesselationTools.loadROIs( TesselationTools.assembleSegments( roiDirectory ) ),
-				TesselationTools.assemblePoints( roiDirectory ) );
+				TesselationTools.assemblePoints( roiDirectory ),
+				TesselationTools.targetArea( roiDirectory ) );
 	}
 
-	public LoadTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState )
+	public LoadTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState, final int targetArea )
 	{
-		this.targetArea = 200;
 		this.interval = interval;
 		this.segments = segments;
+		this.targetArea = targetArea;
 
 		this.threads = new ArrayList< TesselationThread >();
 		for ( int i = 0; i < segments.size(); ++i )

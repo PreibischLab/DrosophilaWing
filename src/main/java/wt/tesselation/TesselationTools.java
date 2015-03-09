@@ -191,17 +191,50 @@ public class TesselationTools
 			final int x = Integer.parseInt( in.readLine().trim() );
 			final int y = Integer.parseInt( in.readLine().trim() );
 
-			System.out.println( x + " " + y );
+			System.out.println( "img dim: " + x + "x" + y );
 			return new FinalInterval( x, y );
 		}
 		catch (IOException e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.out.println( "Could not load dimensions from '" + f + "': " + e );
 			return null;
 		}
 	}
+
+	final public static int targetArea( final File roiDirectory )
+	{
+		if ( !roiDirectory.exists() || !roiDirectory.isDirectory() )
+		{
+			System.out.println( roiDirectory + " does not exist or is no directory." );
+			return -1;
+		}
+
+		final File f = new File( roiDirectory.getAbsolutePath(), "targetarea.txt" );
+
+		if ( !f.exists() )
+		{
+			System.out.println( roiDirectory + " does not exist." );
+			return -1;
+		}
+
+		try
+		{
+			final BufferedReader in = TextFileAccess.openFileReadEx( f );
+
+			final int area = Integer.parseInt( in.readLine().trim() );
+
+			System.out.println( "targetarea: " + area );
+			return area;
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			System.out.println( "Could not load target area from '" + f + "': " + e );
+			return -1;
+		}
+	}
+
 	final public static Segment maxInvCircularSegment( final Iterable< Segment > segmentMap )
 	{
 		Segment maxInvCircS = segmentMap.iterator().next();
@@ -397,7 +430,7 @@ public class TesselationTools
 		}
 
 		if ( count != numPoints )
-			throw new RuntimeException( "Wrong number of points, should be " + numPoints + ", but is " + count );
+			throw new RuntimeException( "Wrong number of points, should be " + numPoints + ", but is " + count + " in file: " + pointFile );
 
 		System.out.println( "Loaded " + numPoints + " points." );
 
