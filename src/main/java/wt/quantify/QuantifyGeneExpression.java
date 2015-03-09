@@ -18,7 +18,7 @@ public class QuantifyGeneExpression
 		this.tesselation = new LoadTesselation( roiDirectory );
 	}
 
-	public void measure()
+	public void measure( final File alignedImage )
 	{
 		
 	}

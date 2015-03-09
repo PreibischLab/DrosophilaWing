@@ -15,7 +15,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
-import wt.alignment.Alignment;
+import wt.alignment.ImageTools;
 
 public class TesselationMultiThread
 {
@@ -31,11 +31,11 @@ public class TesselationMultiThread
 		final Img< FloatType > img = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 		final Img< FloatType > imgGlobal = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 
-		final ImagePlus imp = new ImagePlus( "voronoi", Alignment.wrap( img ) );
+		final ImagePlus imp = new ImagePlus( "voronoi", ImageTools.wrap( img ) );
 		imp.setDisplayRange( 0, targetArea * 2 );
 		imp.show();
 
-		final ImagePlus impGlobal = new ImagePlus( "voronoiGlobal", Alignment.wrap( imgGlobal ) );
+		final ImagePlus impGlobal = new ImagePlus( "voronoiGlobal", ImageTools.wrap( imgGlobal ) );
 		impGlobal.show();
 
 		final ArrayList< Pair< TesselationThread, Thread > > threads = new ArrayList< Pair< TesselationThread, Thread > >();

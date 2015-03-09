@@ -133,10 +133,10 @@ public class InitialTransform
 		final List< Feature > fs1 = new ArrayList< Feature >();
 		final List< Feature > fs2 = new ArrayList< Feature >();
 
-		ijSIFT.extractFeatures( Alignment.wrap( imgA ), fs1 );
+		ijSIFT.extractFeatures( ImageTools.wrap( imgA ), fs1 );
 		IJ.log( fs1.size() + " features extracted." );
 
-		ijSIFT.extractFeatures( Alignment.wrap( imgB ), fs2 );
+		ijSIFT.extractFeatures( ImageTools.wrap( imgB ), fs2 );
 		IJ.log( fs2.size() + " features extracted." );
 
 		final List< PointMatch > candidates = new ArrayList< PointMatch >();

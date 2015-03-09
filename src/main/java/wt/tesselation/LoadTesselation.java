@@ -12,7 +12,7 @@ import net.imglib2.Interval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
-import wt.alignment.Alignment;
+import wt.alignment.ImageTools;
 
 public class LoadTesselation
 {
@@ -49,7 +49,7 @@ public class LoadTesselation
 		if ( this.imgId == null || this.impId == null )
 		{
 			this.imgId = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
-			this.impId = new ImagePlus( "voronoiId", Alignment.wrap( imgId ) );
+			this.impId = new ImagePlus( "voronoiId", ImageTools.wrap( imgId ) );
 		}
 
 		for ( final TesselationThread tt : threads )
@@ -67,7 +67,7 @@ public class LoadTesselation
 	public void renderAreaImage()
 	{
 		this.imgArea = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
-		this.impArea = new ImagePlus( "voronoiArea", Alignment.wrap( imgArea ) );
+		this.impArea = new ImagePlus( "voronoiArea", ImageTools.wrap( imgArea ) );
 		this.impArea.setDisplayRange( 0, targetArea * 2 );
 
 		for ( final TesselationThread tt : threads )

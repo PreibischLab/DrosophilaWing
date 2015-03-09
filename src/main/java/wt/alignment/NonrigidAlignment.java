@@ -106,8 +106,8 @@ public class NonrigidAlignment
 	 */
 	public static Transformation align( final Img< FloatType > target, final Img< FloatType > source, final int subSampling )
 	{
-		final ImagePlus targetImp = new ImagePlus( "Target", Alignment.wrap( target ).convertToByteProcessor( true ) );
-		final ImagePlus sourceImp = new ImagePlus( "Source", Alignment.wrap( source ).convertToByteProcessor( true ) );
+		final ImagePlus targetImp = new ImagePlus( "Target", ImageTools.wrap( target ).convertToByteProcessor( true ) );
+		final ImagePlus sourceImp = new ImagePlus( "Source", ImageTools.wrap( source ).convertToByteProcessor( true ) );
 
 		/*
 		 * targetImp - input target image
