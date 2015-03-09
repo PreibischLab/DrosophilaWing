@@ -94,6 +94,11 @@ public class TesselationTools
 
 	public final static void drawRealPoint( final ImagePlus imp, final Collection< RealPoint > points )
 	{
+		drawRealPoint( imp, points, Color.red );
+	}
+
+	public final static void drawRealPoint( final ImagePlus imp, final Collection< RealPoint > points, final Color col )
+	{
 		Overlay o = imp.getOverlay();
 		
 		if ( o == null )
@@ -101,14 +106,11 @@ public class TesselationTools
 			o = new Overlay();
 			imp.setOverlay( o );
 		}
-		
-		o.clear();
-		
+
 		for ( final RealPoint p : points )
 		{
 			final OvalRoi or = new OvalRoi( Util.round( p.getFloatPosition( 0 ) - 1 ), Util.round( p.getFloatPosition( 1 ) - 1 ), 3, 3 );
-			or.setStrokeColor( Color.red );
-
+			or.setStrokeColor( col );
 			o.add( or );
 		}
 	}

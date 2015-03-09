@@ -6,21 +6,26 @@ public class Segment
 {
 	final static private double PI4 = 4.0 * Math.PI;
 	
-	final int id;
-	int area;
-	float value;
-	final ArrayList< int[] > pixels  = new ArrayList< int[] >();
+	final protected int id;
+	protected int area;
+	protected float value;
+	protected final ArrayList< int[] > pixels;
 
 	public Segment( final int id )
 	{
-		this( id, -1 );
+		this( id, -1, 0, null );
 	}
 
-	public Segment( final int id, final int area )
+	public Segment( final int id, final int area, final float value, final ArrayList< int[] > pixels )
 	{
 		this.id = id;
 		this.area = area;
-		this.value = 0;
+		this.value = value;
+
+		if ( pixels == null )
+			this.pixels = new ArrayList< int[] >();
+		else
+			this.pixels = pixels;
 	}
 
 	public ArrayList< int[] > pixels() { return pixels; }
@@ -29,31 +34,6 @@ public class Segment
 	public void setArea( final int area ) { this.area = area; }
 	public void incArea() { ++area; }
 	public float value() { return value; }
-
-	public double[] centerOfMass()
-	{
-		final double[] c = new double[ 2 ];
-		centerOfMass( c );
-		return c;
-	}
-
-	public void centerOfMass( final double[] c )
-	{
-		double xp = 0;
-		double yp = 0;
-
-		for ( final int[] p : pixels )
-		{
-			xp += p[ 0 ];
-			yp += p[ 1 ];
-		}
-
-		xp /= (double)pixels.size();
-		yp /= (double)pixels.size();
-
-		c[ 0 ] = xp;
-		c[ 1 ] = yp;
-	}
 
 	public void setValue( final float value ) { this.value = value; }
 

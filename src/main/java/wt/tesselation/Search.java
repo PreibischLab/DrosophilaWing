@@ -43,4 +43,6 @@ public class Search
 		this.realRandomAccessible = Views.interpolate( search, factory );
 		this.randomAccessible = Views.raster( realRandomAccessible );
 	}
+
+	public IterableRealInterval< Segment > segments() { return realInterval; }
 }

@@ -19,7 +19,7 @@ public class LoadTesselation
 	final Interval interval;
 	final List< Roi > segments;
 	final int targetArea;
-	final ArrayList< TesselationThread> threads;
+	final ArrayList< TesselationThread > threads;
 
 	ImagePlus impArea, impId;
 	Img< FloatType > imgArea, imgId;
@@ -43,6 +43,8 @@ public class LoadTesselation
 		for ( int i = 0; i < segments.size(); ++i )
 			this.threads.add( new TesselationThread( i, segments.get( i ), interval, targetArea, currentState.get( i ) ) );
 	}
+
+	public List< TesselationThread > tesselations() { return threads; }
 
 	public void renderIdImage( final boolean normalizeIds )
 	{

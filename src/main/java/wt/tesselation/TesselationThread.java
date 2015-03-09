@@ -88,6 +88,7 @@ public class TesselationThread implements Runnable
 		this.stopThread = false;
 	}
 
+	public Roi roi() { return r; }
 	public int area() { return area; }
 	public int numPoints() { return numPoints; }
 	public int targetArea() { return targetArea; }
