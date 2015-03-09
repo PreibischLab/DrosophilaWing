@@ -10,6 +10,7 @@ import mpicbg.models.AffineModel2D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.img.Img;
+import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import spim.Threads;
@@ -77,11 +78,14 @@ public class Alignment
 		new ImageJ();
 
 		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
-		final File wingFile = new File( "A12_002.tif" );
+
+		//final File wingFile = new File( "A12_002.tif" );
+		final File wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_001" );
+
+		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
+		final ImagePlus wingImp = ImageTools.loadImage( wingFile );
 		final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() - 4 ) + ".aligned.zip" );
 		final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() - 4 ) + ".aligned.txt" );
-		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
-		final ImagePlus wingImp = new ImagePlus( wingFile.getAbsolutePath() );
 
 		final Img< FloatType > template = ImageTools.convert( templateImp, 0 );
 		final Img< FloatType > wing = ImageTools.convert( wingImp, 0 );

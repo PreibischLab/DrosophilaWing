@@ -1,5 +1,8 @@
 package wt.alignment;
 
+import java.io.File;
+import java.util.ArrayList;
+
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.FloatProcessor;
@@ -9,9 +12,90 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.RealSum;
 
 public class ImageTools
 {
+	public static ImagePlus loadImage( final File filepart )
+	{
+		if ( filepart.exists() )
+		{
+			final ImagePlus imp = new ImagePlus( filepart.getAbsolutePath() );
+	
+			if ( imp.getStack().getSize() != 2 )
+			{
+				System.out.println( "Image '" + filepart.getAbsolutePath() + "' does not have two slices. Stopping." );
+				return null;
+			}
+
+			return imp;
+		}
+		else
+		{
+			File dir = new File( filepart.getParent() );
+			String fileStart = filepart.getName();
+
+			if ( !dir.exists() )
+			{
+				System.out.println( "Dir '" + dir.getAbsolutePath() + "' does not exist. Stopping." );
+				return null;
+			}
+
+			if ( !dir.isDirectory() )
+			{
+				System.out.println( "Dir '" + dir.getAbsolutePath() + "' is not a directory. Stopping." );
+				return null;
+			}
+
+			final String[] files = dir.list();
+			final ArrayList< File > images = new ArrayList< File >();
+
+			for ( final String f : files )
+			{
+				if ( f.startsWith( fileStart ) )
+				{
+					final File imgFile = new File( dir, f );
+
+					if ( imgFile.exists() )
+						images.add( imgFile );
+				}
+			}
+
+			System.out.println( "Files found: " );
+
+			for ( final File imgFile : images )
+				System.out.println( imgFile );
+
+			if ( images.size() != 2 )
+			{
+				System.out.println( "These are not two files (one brighfield, one gene expression). Stopping." );
+				return null;
+			}
+
+			final Img< FloatType > img1 = convert( new ImagePlus( images.get( 0 ).getAbsolutePath() ), 0 );
+			final Img< FloatType > img2 = convert( new ImagePlus( images.get( 1 ).getAbsolutePath() ), 0 );
+
+			final double avg1 = avg( img1 );
+			final double avg2 = avg( img2 );
+
+			// the brighter one first
+			if ( avg1 > avg2 )
+				return overlay( img1, img2 );
+			else
+				return overlay( img2, img1 );
+		}
+	}
+
+	public static final double avg( final Img< FloatType > img )
+	{
+		final RealSum sum = new RealSum();
+
+		for ( final FloatType t : img )
+			sum.add( t.getRealDouble() );
+
+		return sum.getSum() / (double)img.size();
+	}
+
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
 	{
 		final ImageProcessor ip = imp.getStack().getProcessor( z + 1 );
