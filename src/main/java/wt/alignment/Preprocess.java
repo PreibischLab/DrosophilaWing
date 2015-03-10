@@ -136,8 +136,10 @@ public class Preprocess
 		final Img< FloatType > outT = output.factory().create( this.output, this.output.firstElement() );
 
 		final Cursor< FloatType > cursor = outT.localizingCursor();
+		final double borderValue = border();
+
 		final RealRandomAccess< FloatType > interpolate =
-				Views.interpolate( Views.extendValue( output, new FloatType( (float)border()) ),
+				Views.interpolate( Views.extendValue( output, new FloatType( (float)borderValue ) ),
 						new NLinearInterpolatorFactory< FloatType >() ).realRandomAccess();
 
 		final float[] tmp = new float[ outT.numDimensions() ];

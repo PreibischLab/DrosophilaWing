@@ -20,6 +20,7 @@ import bunwarpj.Transformation;
 public class Alignment
 {
 	protected final InitialTransform transform1;
+	protected final NonrigidAlignment nra;
 	protected ImagePlus aligned = null;
 	protected boolean mirror;
 	protected long[] offset;
@@ -31,6 +32,7 @@ public class Alignment
 	{
 		// find the initial alignment
 		this.transform1 = new InitialTransform( template, wing );
+		this.nra = new NonrigidAlignment();
 
 		if ( !transform1.findInitialModel() )
 			return;
@@ -59,18 +61,27 @@ public class Alignment
 		model.fit( transform1.createUpdatedMatches( this.offset ) );
 		pWing.transform( model );
 
+		ImageTools.overlay( pWing.output, pTemplate.output ).show();
+
 		// compute non-rigid alignment
 		this.subsampling = 2;
-		this.t = NonrigidAlignment.align( pWing.output, pTemplate.output, this.subsampling );
+		this.t = nra.align( pWing.output, pTemplate.output, pWing.border(), pTemplate.border(), this.subsampling );
+
+		ImageTools.overlay( pTemplate.output, NonrigidAlignment.transformTarget( pWing.output, this.t, subsampling ) ).show();
+		SimpleMultiThreading.threadHaltUnClean();
 
 		// transform the original images
-		final Img< FloatType > wingAligned = NonrigidAlignment.transformAll( wing, this.model, this.offset, this.t, this.subsampling );
-		final Img< FloatType > wingGeneAligned = NonrigidAlignment.transformAll( wingGene, this.model, this.offset, this.t, this.subsampling );
+		final Img< FloatType > wingAligned = nra.transformAll( wing, this.model, this.offset, this.t, this.subsampling );
+		final Img< FloatType > wingGeneAligned = nra.transformAll( wingGene, this.model, this.offset, this.t, this.subsampling );
 
-		this.aligned = ImageTools.overlay( wingAligned, wingGeneAligned );
+		this.aligned = ImageTools.overlay( template, wingAligned, wingGeneAligned );
 	}
 
-	public boolean saveTransform( final String log, final File file ) { return LoadSaveTransformation.save( log + "\n" + transform1.log, mirror, offset, model, t, subsampling, file ); }
+	public boolean saveTransform( final String log, final File file )
+	{
+		return LoadSaveTransformation.save( log + "\n" + transform1.log() +  "\n" + nra.log(), mirror, offset, model, t, subsampling, file );
+	}
+
 	public ImagePlus getAlignedImage() { return aligned; }
 
 	public static void main( String args[] ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
