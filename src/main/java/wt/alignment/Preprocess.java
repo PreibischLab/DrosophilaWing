@@ -17,7 +17,7 @@ public class Preprocess
 {
 	final Img< FloatType > input;
 	Img< FloatType > output;
-	double avgBorderValue = Double.NaN;
+	double avgBorderValue1 = Double.NaN;
 
 	/**
 	 * Extend the image and homogenize the contrast for proper alignment
@@ -163,8 +163,8 @@ public class Preprocess
 
 	protected double border()
 	{
-		if ( !Double.isNaN( this.avgBorderValue ) )
-			return this.avgBorderValue;
+		if ( !Double.isNaN( this.avgBorderValue1 ) )
+			return this.avgBorderValue1;
 
 		// compute the average border intensity
 		// strictly 2d!
@@ -204,9 +204,9 @@ public class Preprocess
 			++count;
 		} while ( r.getIntPosition( 1 ) > 0 );
 
-		this.avgBorderValue = avg.getSum() / (double)count;
+		this.avgBorderValue1 = avg.getSum() / (double)count;
 
-		return avgBorderValue;
+		return avgBorderValue1;
 	}
 
 	public double avgImage( final Img< FloatType > img )

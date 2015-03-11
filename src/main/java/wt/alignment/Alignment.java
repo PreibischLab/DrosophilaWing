@@ -2,6 +2,8 @@ package wt.alignment;
 
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.ImageStack;
+import ij.io.FileSaver;
 
 import java.io.File;
 
@@ -10,7 +12,6 @@ import mpicbg.models.AffineModel2D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.img.Img;
-import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import spim.Threads;
@@ -61,14 +62,9 @@ public class Alignment
 		model.fit( transform1.createUpdatedMatches( this.offset ) );
 		pWing.transform( model );
 
-		ImageTools.overlay( pWing.output, pTemplate.output ).show();
-
 		// compute non-rigid alignment
 		this.subsampling = 2;
 		this.t = nra.align( pWing.output, pTemplate.output, pWing.border(), pTemplate.border(), this.subsampling );
-
-		ImageTools.overlay( pTemplate.output, NonrigidAlignment.transformTarget( pWing.output, this.t, subsampling ) ).show();
-		SimpleMultiThreading.threadHaltUnClean();
 
 		// transform the original images
 		final Img< FloatType > wingAligned = nra.transformAll( wing, this.model, this.offset, this.t, this.subsampling );
@@ -89,24 +85,49 @@ public class Alignment
 		new ImageJ();
 
 		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
+		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
+
+		final ImageStack stack = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 
 		//final File wingFile = new File( "A12_002.tif" );
-		final File wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_001" );
 
-		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
-		final ImagePlus wingImp = ImageTools.loadImage( wingFile );
-		final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() - 4 ) + ".aligned.zip" );
-		final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() - 4 ) + ".aligned.txt" );
+		for ( int i = 1; i <= 37; ++i )
+		{
+			final File wingFile;
+			if ( i < 10 )
+				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_00" + i );
+			else
+				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_0" + i );
+	
+			final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.zip" );
+			final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.txt" );
 
-		final Img< FloatType > template = ImageTools.convert( templateImp, 0 );
-		final Img< FloatType > wing = ImageTools.convert( wingImp, 0 );
-		final Img< FloatType > wingGene = ImageTools.convert( wingImp, 1 );
+			/*
+			if ( !wingSavedFile.exists() )
+				continue;
 
-		final Alignment alignment = new Alignment( template, wing, wingGene );
+			final ImagePlus img = new ImagePlus( wingSavedFile.getAbsolutePath() );
+			stack.addSlice( wingFile.getName(), img.getStack().getProcessor( 2 ) );
+			*/
 
-		final ImagePlus aligned = alignment.getAlignedImage();
-		//new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
-		aligned.show();
-		alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
+			final ImagePlus wingImp = ImageTools.loadImage( wingFile );
+
+			if ( wingImp == null )
+				continue;
+
+			final Img< FloatType > template = ImageTools.convert( templateImp, 0 );
+			final Img< FloatType > wing = ImageTools.convert( wingImp, 0 );
+			final Img< FloatType > wingGene = ImageTools.convert( wingImp, 1 );
+	
+			final Alignment alignment = new Alignment( template, wing, wingGene );
+	
+			final ImagePlus aligned = alignment.getAlignedImage();
+			stack.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
+			new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
+
+			alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
+		}
+		
+		new ImagePlus( "all", stack ).show();
 	}
 }

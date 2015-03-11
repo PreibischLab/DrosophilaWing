@@ -52,7 +52,7 @@ public class ImageTools
 
 			for ( final String f : files )
 			{
-				if ( f.startsWith( fileStart ) )
+				if ( f.startsWith( fileStart ) && !f.endsWith( ".txt") && !f.endsWith( ".zip" ) )
 				{
 					final File imgFile = new File( dir, f );
 

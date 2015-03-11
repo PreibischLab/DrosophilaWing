@@ -1,18 +1,13 @@
 package wt.alignment;
 
-import org.jruby.RubyProcess.Sys;
-
 import ij.ImagePlus;
 import mpicbg.models.AbstractAffineModel2D;
 import mpicbg.models.NoninvertibleModelException;
 import net.imglib2.Cursor;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.algorithm.gauss3.Gauss3;
-import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.img.Img;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
@@ -182,7 +177,7 @@ public class NonrigidAlignment
 			final double sourceOutOfBoundsValue,
 			final int subSampling )
 	{
-		String s = adjustImageIntensities( target, source, targetOutOfBoundsValue, sourceOutOfBoundsValue );
+		String s = adjustImageIntensities( source, target, sourceOutOfBoundsValue, targetOutOfBoundsValue );
 
 		System.out.println( s );
 		log += s;
@@ -190,10 +185,6 @@ public class NonrigidAlignment
 		final ImagePlus targetImp = new ImagePlus( "Target", ImageTools.wrap( target ).convertToByteProcessor( false ) );
 		final ImagePlus sourceImp = new ImagePlus( "Source", ImageTools.wrap( source ).convertToByteProcessor( false ) );
 
-		targetImp.show();
-		sourceImp.show();
-		
-		SimpleMultiThreading.threadHaltUnClean();
 		/*
 		 * targetImp - input target image
 		 * sourceImp - input source image
