@@ -8,10 +8,12 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import spim.process.fusion.FusionHelper;
+import wt.tools.Curvature;
 import bunwarpj.Transformation;
 import bunwarpj.bUnwarpJ_;
 
@@ -153,7 +155,7 @@ public class NonrigidAlignment
 			"f(z=" + z3 + ") = " + (a2*z3 + n2) + "\n" +
 			"f(x=" + x1 + ") = " + (a1*x1*x1 + b1*x1 + c1) + "\n" +
 			"f(x=" + x2 + ") = " + (a1*x2*x2 + b1*x2 + c1) + "\n" +
-			"f(x=" + x3 + ") = " + (a1*x3*x3 + b1*x3 + c1);
+			"f(x=" + x3 + ") = " + (a1*x3*x3 + b1*x3 + c1) + "\n";
 
 		for ( final FloatType t : target )
 			t.set( Math.min( 255, Math.max( 0, (float)(a2*t.get() + n2) ) ) );
@@ -181,9 +183,30 @@ public class NonrigidAlignment
 
 		System.out.println( s );
 		log += s;
+		/*
+		Curvature.compute( ImageTools.wrap( target ), 4 );
+		Curvature.compute( ImageTools.wrap( source ), 4 );
+
+		Curvature.setBoundaries( ImageTools.wrap( target ), 0 );
+		Curvature.setBoundaries( ImageTools.wrap( source ), 0 );
+
+		//new ImagePlus( "t", ImageTools.wrap( target ) ).show();
+		//new ImagePlus( "s", ImageTools.wrap( source ) ).show();
+		//SimpleMultiThreading.threadHaltUnClean();
+
+		s = "after computing curvature\n";
+		s += adjustImageIntensities( source, target, 0, 0 );
+
+		System.out.println( s );
+		log += s;
+		*/
 
 		final ImagePlus targetImp = new ImagePlus( "Target", ImageTools.wrap( target ).convertToByteProcessor( false ) );
 		final ImagePlus sourceImp = new ImagePlus( "Source", ImageTools.wrap( source ).convertToByteProcessor( false ) );
+
+		//targetImp.show();
+		//sourceImp.show();
+		//SimpleMultiThreading.threadHaltUnClean();
 
 		/*
 		 * targetImp - input target image
@@ -209,7 +232,7 @@ public class NonrigidAlignment
 		final double divWeight = 0.0;
 		final double curlWeight = 0.0;
 		final double landmarkWeight = 0.0;
-		final double imageWeight = 1.0;
+		final double imageWeight = 2.0;
 		final double consistencyWeight = 10.0;
 		final double stopThreshold = 0.01;
 		
