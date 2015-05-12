@@ -93,7 +93,10 @@ public class LoadSaveTransformation
 
 	public static boolean save( final String log, final boolean mirror, final long[] offset, final AbstractAffineModel2D< ? > model, final Transformation t, final int subsampling, final File file )
 	{
-		return save( log, mirror, offset, model, t.getIntervals(), t.getDirectDeformationCoefficientsX(), t.getDirectDeformationCoefficientsY(), subsampling, file );
+		if ( t != null )
+			return save( log, mirror, offset, model, t.getIntervals(), t.getDirectDeformationCoefficientsX(), t.getDirectDeformationCoefficientsY(), subsampling, file );
+		else
+			return save( log, mirror, offset, model, -1, null, null, subsampling, file );
 	}
 
 	public static boolean save( final String log, final boolean mirror, final long[] offset, final AbstractAffineModel2D< ? > model, final int intervals, final double[][] cx, final double[][] cy, final int subsampling, final File file )
@@ -131,7 +134,8 @@ public class LoadSaveTransformation
 			w.println( "nonrigid:" );
 			w.println( "subsampling\t" + subsampling );
 			w.println( "intervals\t" + intervals );
-			w.println( saveElasticTransformation( intervals, cx, cy ) );
+			if ( intervals > -1 )
+				w.println( saveElasticTransformation( intervals, cx, cy ) );
 			w.close();
 
 			return true;

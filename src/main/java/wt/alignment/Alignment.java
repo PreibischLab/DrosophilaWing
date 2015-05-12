@@ -12,7 +12,6 @@ import mpicbg.models.AffineModel2D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.img.Img;
-import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import spim.Threads;
@@ -129,10 +128,17 @@ public class Alignment
 			final Alignment alignment = new Alignment( template, wing, wingGene );
 	
 			final ImagePlus aligned = alignment.getAlignedImage();
-			stack.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
-			new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
-
-			alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
+			if ( aligned != null )
+			{
+				stack.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
+				new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
+	
+				alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
+			}
+			else
+			{
+				stack.addSlice( wingFile.getName(), wing );
+			}
 		}
 		
 		new ImagePlus( "all", stack ).show();

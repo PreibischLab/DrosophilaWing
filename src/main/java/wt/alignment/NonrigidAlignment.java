@@ -1,5 +1,6 @@
 package wt.alignment;
 
+import ij.IJ;
 import ij.ImagePlus;
 import mpicbg.models.AbstractAffineModel2D;
 import mpicbg.models.NoninvertibleModelException;
@@ -8,12 +9,10 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import spim.process.fusion.FusionHelper;
-import wt.tools.Curvature;
 import bunwarpj.Transformation;
 import bunwarpj.bUnwarpJ_;
 
@@ -37,6 +36,9 @@ public class NonrigidAlignment
 
 		final double s = subSampling == 0 ? 1 : Math.pow( 2, subSampling );
 
+		if ( t == null )
+			IJ.log( "WARNING: No non-rigid transformation present." );
+
 		try
 		{
 
@@ -44,13 +46,21 @@ public class NonrigidAlignment
 			{
 				final FloatType f = cursor.next();
 
-				final double u = ( cursor.getDoublePosition( 0 ) + offset[ 0 ] ) / s;
-				final double v = ( cursor.getDoublePosition( 1 ) + offset[ 1 ] ) / s;
-
-				t.transform( u, v, l1, true );
-
-				l2[ 0 ] = (float)( l1[ 0 ] * s - offset[ 0 ] );
-				l2[ 1 ] = (float)( l1[ 1 ] * s - offset[ 1 ] );
+				if ( t != null )
+				{
+					final double u = ( cursor.getDoublePosition( 0 ) + offset[ 0 ] ) / s;
+					final double v = ( cursor.getDoublePosition( 1 ) + offset[ 1 ] ) / s;
+	
+					t.transform( u, v, l1, true );
+	
+					l2[ 0 ] = (float)( l1[ 0 ] * s - offset[ 0 ] );
+					l2[ 1 ] = (float)( l1[ 1 ] * s - offset[ 1 ] );
+				}
+				else
+				{
+					l2[ 0 ] = cursor.getFloatPosition( 0 );
+					l2[ 1 ] = cursor.getFloatPosition( 1 );
+				}
 
 				model.applyInverseInPlace( l2 );
 
@@ -225,14 +235,14 @@ public class NonrigidAlignment
 		 * stopThreshold - stopping threshold
 		 */
 		
-		final int mode = 0;
+		final int mode = 0; // 0 or 1 doesn't play a big role
 		final int img_subsamp_fact = subSampling;
 		final int min_scale_deformation = 0;
 		final int max_scale_deformation = 4;
 		final double divWeight = 0.0;
 		final double curlWeight = 0.0;
 		final double landmarkWeight = 0.0;
-		final double imageWeight = 2.0;
+		final double imageWeight = 0.75; // 1.0 gives better results than 2.0
 		final double consistencyWeight = 10.0;
 		final double stopThreshold = 0.01;
 		
