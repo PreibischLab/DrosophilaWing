@@ -2,6 +2,7 @@ package wt.quantify;
 
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.gui.Roi;
 
 import java.io.File;
@@ -40,6 +41,8 @@ public class QuantifyGeneExpression
 	final LocalMaxima< FloatType > maxFinder;
 	final ArrayList< Roi > rois;
 
+	Img< FloatType > gene, measurement;
+
 	public QuantifyGeneExpression( final File roiDirectory )
 	{
 		this.tesselation = new LoadTesselation( roiDirectory );
@@ -48,14 +51,21 @@ public class QuantifyGeneExpression
 		this.maxFinder = new SimpleLocalMaxima();
 	}
 
+	public Interval interval() { return interval; }
+	public Img< FloatType > lastGene() { return gene; }
+	public ImagePlus lastGeneImp() { return new ImagePlus( "maxima", ImageTools.wrap( gene ) ); }
+	public Img< FloatType > lastMeasurement() { return measurement; }
+	public ImagePlus lastMeasurementImp() { return new ImagePlus( "measurement", ImageTools.wrap( measurement ) ); }
+
 	public void measure( final File alignedImage )
 	{
-		final Img< FloatType > gene = ImageTools.convert( new ImagePlus( alignedImage.getAbsolutePath() ), 1 );
+		final ImagePlus imp = new ImagePlus( alignedImage.getAbsolutePath() );
+		this.gene = ImageTools.convert( imp, imp.getStackSize() - 1 );
 
-		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( gene, new FloatType( 10 ) );
+		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( this.gene, new FloatType( 10 ) );
 
-		final Img< FloatType > avgImg = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
-		final ImagePlus avgImp = new ImagePlus( "voronoiId", ImageTools.wrap( avgImg ) );
+		this.measurement = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
+		//final ImagePlus avgImp = new ImagePlus( "voronoiId", ImageTools.wrap( avgImg ) );
 
 		// reset all values
 		for ( final TesselationThread t : tesselation.tesselations() )
@@ -81,17 +91,8 @@ public class QuantifyGeneExpression
 
 			smoothValues( t.search(), t.locationMap(), 5 );
 
-			TesselationTools.drawValue( t.mask(), t.search().randomAccessible(), avgImg );
+			TesselationTools.drawValue( t.mask(), t.search().randomAccessible(), this.measurement );
 		}
-
-		avgImp.resetDisplayRange();
-		avgImp.show();
-
-		final ImagePlus imp = new ImagePlus( "maxima", ImageTools.wrap( gene ) );
-		imp.resetDisplayRange();
-		//TesselationTools.drawRealPoint( imp, maxima );
-		imp.show();
-		
 	}
 
 	public static void smoothValues( final Search< Segment > search, final HashMap< Integer, RealPoint > locationMap, final int numNeighbors )
@@ -148,8 +149,35 @@ public class QuantifyGeneExpression
 		impId.updateAndDraw();
 		impId.show();
 		
-		qge.measure( new File( "A12_002.aligned.zip" ));
+		//final File f = new File( "A12_002.aligned.zip" );
+		//final File f = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_001.aligned.zip" );
+		//qge.measure( f );
+		//qge.lastMeasurementImp().show();
+
+		final ImageStack stack = new ImageStack( (int)qge.interval().dimension( 0 ), (int)qge.interval().dimension( 1 ) );
 		
+		for ( int i = 1; i <= 37; ++i )
+		{
+			final File wingFile;
+			if ( i < 10 )
+				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_00" + i + ".aligned.zip" );
+			else
+				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_0" + i + ".aligned.zip" );
+
+			if ( !wingFile.exists() )
+				continue;
+
+			// not well aligned (TODO: find out why, was only 28 before)
+			if ( i == 10 || i == 24 || i == 28 )
+				continue;
+
+			System.out.println( wingFile.getAbsolutePath() );
+			qge.measure( wingFile );
+			
+			stack.addSlice( wingFile.getAbsolutePath(), qge.lastMeasurementImp().getProcessor() );
+			//qge.lastMeasurementImp().show();
+		}
 		
+		new ImagePlus( "all", stack ).show();
 	}
 }
