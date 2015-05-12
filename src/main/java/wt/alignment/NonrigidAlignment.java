@@ -242,7 +242,7 @@ public class NonrigidAlignment
 		final double divWeight = 0.0;
 		final double curlWeight = 0.0;
 		final double landmarkWeight = 0.0;
-		final double imageWeight = 0.75; // 1.0 gives better results than 2.0
+		final double imageWeight = 0.5; // 1.0 gives better results than 2.0
 		final double consistencyWeight = 10.0;
 		final double stopThreshold = 0.01;
 		
