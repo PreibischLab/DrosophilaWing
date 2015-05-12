@@ -82,22 +82,35 @@ public class InitialTransform
 		IJ.log( out );
 		log += out + "\n";
 
-		final Pair< Double, List< PointMatch > > siftResult;
-
-		if ( normal.getB().size() / ( normal.getA()/5 ) > mirror.getB().size() / ( mirror.getA()/5 ) )
+		if ( normal.getB().size() > 0 && mirror.getB().size() == 0 )
 		{
-			siftResult = normal;
+			this.mirror = false;
+		}
+		else if ( mirror.getB().size() > 0 && normal.getB().size() == 0 )
+		{
+			this.mirror = true;
+		}
+		else if ( normal.getB().size() / ( normal.getA()/5 ) > mirror.getB().size() / ( mirror.getA()/5 ) )
+		{
 			this.mirror = false;
 		}
 		else
 		{
-			siftResult = mirror;
 			this.mirror = true;
 		}
 
+		final Pair< Double, List< PointMatch > > siftResult;
+
+		if ( this.mirror )
+			siftResult = mirror;
+		else
+			siftResult = normal;
+		
 		if ( siftResult.getB().size() == 0 )
 		{
-			IJ.log( "Initial alignment failed." );
+			out = "Initial alignment failed, no result for normal or mirroring";
+			IJ.log( out );
+			log += out + "\n";
 			return false;
 		}
 
@@ -114,7 +127,7 @@ public class InitialTransform
 			this.model = null;
 			this.matches = null;
 			this.error = Double.NaN;
-			out = "Initial alignment failed.";
+			out = "Initial alignment failed with exception: " + e;
 			IJ.log( out );
 			log += out + "\n";
 			e.printStackTrace();
