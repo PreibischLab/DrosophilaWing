@@ -12,6 +12,7 @@ import mpicbg.models.AffineModel2D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.img.Img;
+import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import spim.Threads;
@@ -62,6 +63,9 @@ public class Alignment
 		model.fit( transform1.createUpdatedMatches( this.offset ) );
 		pWing.transform( model );
 
+		//new ImagePlus( "template", ImageTools.wrap( pTemplate.output ) ).show();;
+		//new ImagePlus( "wing", ImageTools.wrap( pWing.output ) ).show();;
+
 		// compute non-rigid alignment
 		this.subsampling = 2;
 		this.t = nra.align( pWing.output, pTemplate.output, pWing.border(), pTemplate.border(), this.subsampling );
@@ -71,6 +75,9 @@ public class Alignment
 		final Img< FloatType > wingGeneAligned = nra.transformAll( wingGene, this.model, this.offset, this.t, this.subsampling );
 
 		this.aligned = ImageTools.overlay( template, wingAligned, wingGeneAligned );
+
+		//this.aligned.show();
+		//SimpleMultiThreading.threadHaltUnClean();
 	}
 
 	public boolean saveTransform( final String log, final File file )
@@ -95,9 +102,9 @@ public class Alignment
 		{
 			final File wingFile;
 			if ( i < 10 )
-				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_00" + i );
+				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/A2/wing_A2_dsRed_00" + i );
 			else
-				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_0" + i );
+				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/A2/wing_A2_dsRed_0" + i );
 	
 			final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.zip" );
 			final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.txt" );
