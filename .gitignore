@@ -1,2 +1,5 @@
 /target
 *.zip
+.classpath
+.project
+/.settings
