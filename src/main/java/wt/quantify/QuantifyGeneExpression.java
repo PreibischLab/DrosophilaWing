@@ -62,7 +62,7 @@ public class QuantifyGeneExpression
 		final ImagePlus imp = new ImagePlus( alignedImage.getAbsolutePath() );
 		this.gene = ImageTools.convert( imp, imp.getStackSize() - 1 );
 
-		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( this.gene, new FloatType( 10 ) );
+		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( this.gene, new FloatType( 3 ) );
 
 		this.measurement = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 		//final ImagePlus avgImp = new ImagePlus( "voronoiId", ImageTools.wrap( avgImg ) );
@@ -160,21 +160,21 @@ public class QuantifyGeneExpression
 		{
 			final File wingFile;
 			if ( i < 10 )
-				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_00" + i + ".aligned.zip" );
+				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_00" + i + ".aligned.zip" );
 			else
-				wingFile = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_0" + i + ".aligned.zip" );
+				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_0" + i + ".aligned.zip" );
 
 			if ( !wingFile.exists() )
 				continue;
 
 			// not well aligned (TODO: find out why, was only 28 before)
-			if ( i == 10 || i == 24 || i == 28 )
-				continue;
+			//if ( i == 10 || i == 24 || i == 28 )
+			//	continue;
 
 			System.out.println( wingFile.getAbsolutePath() );
 			qge.measure( wingFile );
 			
-			stack.addSlice( wingFile.getAbsolutePath(), qge.lastMeasurementImp().getProcessor() );
+			stack.addSlice( wingFile.getName(), qge.lastMeasurementImp().getProcessor() );
 			//qge.lastMeasurementImp().show();
 		}
 		

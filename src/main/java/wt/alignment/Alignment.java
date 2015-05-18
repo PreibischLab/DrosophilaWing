@@ -101,9 +101,9 @@ public class Alignment
 		{
 			final File wingFile;
 			if ( i < 10 )
-				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/A2/wing_A2_dsRed_00" + i );
+				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_00" + i );
 			else
-				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/A2/wing_A2_dsRed_0" + i );
+				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_0" + i );
 	
 			final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.zip" );
 			final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.txt" );
