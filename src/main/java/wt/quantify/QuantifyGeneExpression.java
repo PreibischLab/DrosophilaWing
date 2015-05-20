@@ -1,14 +1,17 @@
 package wt.quantify;
 
+import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Roi;
+import ij.io.FileSaver;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import net.imglib2.Interval;
 import net.imglib2.RealPoint;
@@ -30,6 +33,7 @@ import wt.tesselation.Segment;
 import wt.tesselation.TesselationThread;
 import wt.tesselation.TesselationTools;
 import wt.tesselation.pointupdate.DistancePointUpdater;
+import wt.tools.CommonFileName;
 
 public class QuantifyGeneExpression
 {
@@ -138,46 +142,77 @@ public class QuantifyGeneExpression
 		return list;
 	}
 
-	public static void main( String[] args )
+	public static void process( final File tesselationDir, final File imageDir, final List< String > alignedImages, final boolean showTesselation, final boolean showResult, final boolean saveResult )
 	{
-		new ImageJ();
+		if ( !tesselationDir.exists() )
+			throw new RuntimeException( "Tesselation directory '" + tesselationDir.getAbsolutePath() + "' does not exist." );
 
-		final QuantifyGeneExpression qge = new QuantifyGeneExpression( new File( "SegmentedWingTemplate" ) );
+		if ( !tesselationDir.isDirectory() )
+			throw new RuntimeException( "Tesselation directory '" + tesselationDir.getAbsolutePath() + "' is not a directory." );
 
-		final ImagePlus impId = qge.tesselation().impId( true );
-		TesselationTools.drawRealPoint( impId, qge.centerOfMasses() );
-		impId.updateAndDraw();
-		impId.show();
-		
-		//final File f = new File( "A12_002.aligned.zip" );
-		//final File f = new File( "/Users/preibischs/Downloads/samples/B16/wing_B16_dsRed_001.aligned.zip" );
-		//qge.measure( f );
-		//qge.lastMeasurementImp().show();
+		if ( !imageDir.exists() )
+			throw new RuntimeException( "Image directory '" + imageDir.getAbsolutePath() + "' does not exist." );
+
+		if ( !imageDir.isDirectory() )
+			throw new RuntimeException( "Image directory '" + imageDir.getAbsolutePath() + "' is not a directory." );
+
+		final QuantifyGeneExpression qge = new QuantifyGeneExpression( tesselationDir );
+
+		if ( showTesselation )
+		{
+			final ImagePlus impId = qge.tesselation().impId( true );
+			TesselationTools.drawRealPoint( impId, qge.centerOfMasses() );
+			impId.updateAndDraw();
+			impId.show();
+		}
 
 		final ImageStack stack = new ImageStack( (int)qge.interval().dimension( 0 ), (int)qge.interval().dimension( 1 ) );
-		
-		for ( int i = 1; i <= 37; ++i )
+
+		for ( final String wingFileName : alignedImages )
 		{
-			final File wingFile;
-			if ( i < 10 )
-				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_00" + i + ".aligned.zip" );
-			else
-				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_0" + i + ".aligned.zip" );
+			final File wingFile = new File( imageDir, wingFileName );
+	
+			IJ.log( "Quantifying: " + wingFile.getAbsolutePath() );
 
 			if ( !wingFile.exists() )
+			{
+				IJ.log( "ERROR, could not load file '" + wingFile.getAbsolutePath() + "'" );
 				continue;
+			}
 
-			// not well aligned (TODO: find out why, was only 28 before)
-			//if ( i == 10 || i == 24 || i == 28 )
-			//	continue;
-
-			System.out.println( wingFile.getAbsolutePath() );
 			qge.measure( wingFile );
 			
 			stack.addSlice( wingFile.getName(), qge.lastMeasurementImp().getProcessor() );
 			//qge.lastMeasurementImp().show();
 		}
-		
-		new ImagePlus( "all", stack ).show();
+
+		if ( showResult )
+		{
+			new ImagePlus( "quantification", stack ).show();
+		}
+
+		if ( saveResult )
+		{
+			if ( stack.getSize() == 1 )
+				new FileSaver( new ImagePlus( "quantification", stack ) ).saveAsTiff( new File( imageDir, "all_quantified.tif" ).getAbsolutePath() );
+			else
+				new FileSaver( new ImagePlus( "quantification", stack ) ).saveAsTiffStack( new File( imageDir, "all_quantified.tif" ).getAbsolutePath() );
+		}
+	}
+
+	public static void main( String[] args )
+	{
+		new ImageJ();
+
+		final File imageDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
+		final File tesselationDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/SegmentedWingTemplate" );
+
+		final List< String > alignedImages = CommonFileName.getAlignedImages( imageDir );
+
+		//final ArrayList< String > files = new ArrayList< String >();
+		//files.add( new File( "wing_B16_dsRed_001.aligned.zip" ) );
+		//final File imageDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
+
+		process( tesselationDir, imageDir, alignedImages, false, true, false );
 	}
 }

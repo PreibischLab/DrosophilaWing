@@ -194,6 +194,9 @@ public class TesselationTools
 			final int y = Integer.parseInt( in.readLine().trim() );
 
 			System.out.println( "img dim: " + x + "x" + y );
+
+			in.close();
+
 			return new FinalInterval( x, y );
 		}
 		catch (IOException e)

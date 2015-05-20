@@ -148,8 +148,16 @@ public class Alignment
 
 		if ( saveSummary )
 		{
-			new FileSaver( new ImagePlus( "all_gene", stackGene ) ).saveAsTiffStack( new File( dirPairs, "all_gene.tif" ).getAbsolutePath() );
-			new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiffStack( new File( dirPairs, "all_brightfield.tif" ).getAbsolutePath() );
+			if ( stackGene.getSize() == 1 )
+			{
+				new FileSaver( new ImagePlus( "all_gene", stackGene ) ).saveAsTiff( new File( dirPairs, "all_gene.tif" ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiff( new File( dirPairs, "all_brightfield.tif" ).getAbsolutePath() );
+			}
+			else
+			{
+				new FileSaver( new ImagePlus( "all_gene", stackGene ) ).saveAsTiffStack( new File( dirPairs, "all_gene.tif" ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiffStack( new File( dirPairs, "all_brightfield.tif" ).getAbsolutePath() );
+			}
 		}
 	}
 

@@ -24,17 +24,29 @@ public class LoadTesselation
 	ImagePlus impArea, impId;
 	Img< FloatType > imgArea, imgId;
 
-	public LoadTesselation( final File roiDirectory )
+	public LoadTesselation( final File roiData )
 	{
 		this(
-				TesselationTools.templateDimensions( roiDirectory ),
-				TesselationTools.loadROIs( TesselationTools.assembleSegments( roiDirectory ) ),
-				TesselationTools.assemblePoints( roiDirectory ),
-				TesselationTools.targetArea( roiDirectory ) );
+				TesselationTools.templateDimensions( roiData ),
+				TesselationTools.loadROIs( TesselationTools.assembleSegments( roiData ) ),
+				TesselationTools.assemblePoints( roiData ),
+				TesselationTools.targetArea( roiData ) );
 	}
 
 	public LoadTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState, final int targetArea )
 	{
+		if ( interval == null )
+			throw new RuntimeException( "Interval is null, error loading it?" );
+
+		if ( segments == null )
+			throw new RuntimeException( "ROI segment list is null, error loading it?" );
+
+		if ( currentState == null )
+			throw new RuntimeException( "Files with tesselation are missing, error loading it?" );
+
+		if ( targetArea < 0 )
+			throw new RuntimeException( "Target area for individual segments could not be read." );
+
 		this.interval = interval;
 		this.segments = segments;
 		this.targetArea = targetArea;
