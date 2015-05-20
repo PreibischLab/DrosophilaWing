@@ -187,11 +187,12 @@ public class NonrigidAlignment
 			final Img< FloatType > source,
 			final double targetOutOfBoundsValue,
 			final double sourceOutOfBoundsValue,
-			final int subSampling )
+			final int subSampling,
+			final double imageWeight )
 	{
 		String s = adjustImageIntensities( source, target, sourceOutOfBoundsValue, targetOutOfBoundsValue );
 
-		System.out.println( s );
+		IJ.log( s );
 		log += s;
 		/*
 		Curvature.compute( ImageTools.wrap( target ), 4 );
@@ -242,7 +243,7 @@ public class NonrigidAlignment
 		final double divWeight = 0.0;
 		final double curlWeight = 0.0;
 		final double landmarkWeight = 0.0;
-		final double imageWeight = 0.5; // 1.0 gives better results than 2.0
+		//final double imageWeight = 0.5; // 1.0 gives better results than 2.0
 		final double consistencyWeight = 10.0;
 		final double stopThreshold = 0.01;
 		

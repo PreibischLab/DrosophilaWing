@@ -182,7 +182,7 @@ public class InitialTransform
 		{
 			PointMatch.apply( inliers, model );
 			error = PointMatch.meanDistance( inliers );
-			System.out.println( model );
+			IJ.log( "Model:" + model );
 		}
 		else
 		{

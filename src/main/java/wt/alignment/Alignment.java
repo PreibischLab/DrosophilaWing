@@ -1,11 +1,13 @@
 package wt.alignment;
 
+import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.io.FileSaver;
 
 import java.io.File;
+import java.util.List;
 
 import mpicbg.models.AbstractAffineModel2D;
 import mpicbg.models.AffineModel2D;
@@ -13,8 +15,10 @@ import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
 import spim.Threads;
+import wt.tools.CommonFileName;
 import wt.tools.Mirror;
 import bunwarpj.Transformation;
 
@@ -29,7 +33,7 @@ public class Alignment
 	protected Transformation t;
 	protected int subsampling;
 
-	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene, final double imageWeight ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 		// find the initial alignment
 		this.transform1 = new InitialTransform( template, wing );
@@ -40,7 +44,7 @@ public class Alignment
 
 		if ( transform1.mirror() )
 		{
-			System.out.println( "Mirroring wing" );
+			IJ.log( "Mirroring wing" );
 			Mirror.mirror( wing, 0, Threads.numThreads() );
 			Mirror.mirror( wingGene, 0, Threads.numThreads() );
 		}
@@ -67,7 +71,7 @@ public class Alignment
 
 		// compute non-rigid alignment
 		this.subsampling = 2;
-		this.t = nra.align( pWing.output, pTemplate.output, pWing.border(), pTemplate.border(), this.subsampling );
+		this.t = nra.align( pWing.output, pTemplate.output, pWing.border(), pTemplate.border(), this.subsampling, imageWeight );
 
 		// transform the original images
 		final Img< FloatType > wingAligned = nra.transformAll( wing, this.model, this.offset, this.t, this.subsampling );
@@ -86,25 +90,18 @@ public class Alignment
 
 	public ImagePlus getAlignedImage() { return aligned; }
 
-	public static void main( String args[] ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	public static void process( final File templateFile, final File dirPairs, final List< Pair< String, String > > pairs, final double imageWeight, final boolean showSummary, final boolean saveSummary ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
-		new ImageJ();
-
-		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
 		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
 
-		final ImageStack stack = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
+		final ImageStack stackGene = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
+		final ImageStack stackBrightfield = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 
 		//final File wingFile = new File( "A12_002.tif" );
 
-		for ( int i = 1; i <= 37; ++i )
+		for ( final Pair< String, String > pair : pairs )
 		{
-			final File wingFile;
-			if ( i < 10 )
-				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_00" + i );
-			else
-				wingFile = new File( "/media/preibisch/data/Microscopy/Drosophila Wing Gompel/samples/B16/wing_B16_dsRed_0" + i );
-	
+			final File wingFile = new File( dirPairs, pair.getA().substring( 0, pair.getA().indexOf( ".tif" ) ) );
 			final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.zip" );
 			final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.txt" );
 
@@ -125,22 +122,50 @@ public class Alignment
 			final Img< FloatType > wing = ImageTools.convert( wingImp, 0 );
 			final Img< FloatType > wingGene = ImageTools.convert( wingImp, 1 );
 	
-			final Alignment alignment = new Alignment( template, wing, wingGene );
+			final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight );
 	
 			final ImagePlus aligned = alignment.getAlignedImage();
 			if ( aligned != null )
 			{
-				stack.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
+				stackBrightfield.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
+				stackGene.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 3 ) );
 				new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
 	
 				alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
 			}
 			else
 			{
-				stack.addSlice( wingFile.getName(), wing );
+				stackBrightfield.addSlice( wingFile.getName(), wing );
+				stackGene.addSlice( wingFile.getName(), wingGene );
 			}
 		}
-		
-		new ImagePlus( "all", stack ).show();
+
+		if ( showSummary )
+		{
+			new ImagePlus( "all_gene", stackGene ).show();
+			new ImagePlus( "all_brightfield", stackBrightfield ).show();
+		}
+
+		if ( saveSummary )
+		{
+			new FileSaver( new ImagePlus( "all_gene", stackGene ) ).saveAsTiffStack( new File( dirPairs, "all_gene.tif" ).getAbsolutePath() );
+			new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiffStack( new File( dirPairs, "all_brightfield.tif" ).getAbsolutePath() );
+		}
+	}
+
+	public static void main( String args[] ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	{
+		new ImageJ();
+
+		final File dir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
+
+		final List< Pair< String, String > > pairs = CommonFileName.pairedImages( dir );
+
+		for ( final Pair< String, String > pair : pairs )
+			System.out.println( pair.getA() + " <> " + pair.getB() );
+
+		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
+
+		process( templateFile, dir, pairs, 0.5, true, true );
 	}
 }
