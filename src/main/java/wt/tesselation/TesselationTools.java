@@ -1,5 +1,6 @@
 package wt.tesselation;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Line;
 import ij.gui.OvalRoi;
@@ -174,7 +175,7 @@ public class TesselationTools
 	{
 		if ( !roiDirectory.exists() || !roiDirectory.isDirectory() )
 		{
-			System.out.println( roiDirectory + " does not exist or is no directory." );
+			IJ.log( roiDirectory + " does not exist or is no directory." );
 			return null;
 		}
 
@@ -182,7 +183,7 @@ public class TesselationTools
 
 		if ( !f.exists() )
 		{
-			System.out.println( roiDirectory + " does not exist." );
+			IJ.log( roiDirectory + " does not exist." );
 			return null;
 		}
 
@@ -193,7 +194,7 @@ public class TesselationTools
 			final int x = Integer.parseInt( in.readLine().trim() );
 			final int y = Integer.parseInt( in.readLine().trim() );
 
-			System.out.println( "img dim: " + x + "x" + y );
+			IJ.log( "img dim: " + x + "x" + y );
 
 			in.close();
 
@@ -202,7 +203,7 @@ public class TesselationTools
 		catch (IOException e)
 		{
 			e.printStackTrace();
-			System.out.println( "Could not load dimensions from '" + f + "': " + e );
+			IJ.log( "Could not load dimensions from '" + f + "': " + e );
 			return null;
 		}
 	}
@@ -211,7 +212,7 @@ public class TesselationTools
 	{
 		if ( !roiDirectory.exists() || !roiDirectory.isDirectory() )
 		{
-			System.out.println( roiDirectory + " does not exist or is no directory." );
+			IJ.log( roiDirectory + " does not exist or is no directory." );
 			return -1;
 		}
 
@@ -219,7 +220,7 @@ public class TesselationTools
 
 		if ( !f.exists() )
 		{
-			System.out.println( roiDirectory + " does not exist." );
+			IJ.log( roiDirectory + " does not exist." );
 			return -1;
 		}
 
@@ -229,13 +230,16 @@ public class TesselationTools
 
 			final int area = Integer.parseInt( in.readLine().trim() );
 
-			System.out.println( "targetarea: " + area );
+			IJ.log( "targetarea: " + area );
+
+			in.close();
+
 			return area;
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
-			System.out.println( "Could not load target area from '" + f + "': " + e );
+			IJ.log( "Could not load target area from '" + f + "': " + e );
 			return -1;
 		}
 	}
@@ -425,7 +429,6 @@ public class TesselationTools
 					locations.put( s.id(), point );
 			}
 
-		
 			in.close();
 		}
 		catch ( IOException e )
@@ -437,7 +440,7 @@ public class TesselationTools
 		if ( count != numPoints )
 			throw new RuntimeException( "Wrong number of points, should be " + numPoints + ", but is " + count + " in file: " + pointFile );
 
-		System.out.println( "Loaded " + numPoints + " points." );
+		IJ.log( "Loaded " + numPoints + " points from file '" + pointFile.getAbsolutePath() + "'." );
 
 		return elements;
 	}

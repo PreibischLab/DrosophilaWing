@@ -1,6 +1,7 @@
 package wt.quantify;
 
 import fiji.util.gui.GenericDialogPlus;
+import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.plugin.PlugIn;
@@ -39,6 +40,8 @@ public class DisplayTesselation_ImageJ implements PlugIn
 		TesselationTools.drawRealPoint( impId, qge.centerOfMasses() );
 		impId.updateAndDraw();
 		impId.show();
+
+		IJ.log( "Red circles indicate the center of mass of each segment" );
 	}
 
 	public static void main( String[] args )
