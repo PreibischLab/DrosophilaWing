@@ -142,7 +142,7 @@ public class Preprocess
 				Views.interpolate( Views.extendValue( output, new FloatType( (float)borderValue ) ),
 						new NLinearInterpolatorFactory< FloatType >() ).realRandomAccess();
 
-		final float[] tmp = new float[ outT.numDimensions() ];
+		final double[] tmp = new double[ outT.numDimensions() ];
 
 		try
 		{

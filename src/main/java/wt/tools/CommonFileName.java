@@ -59,8 +59,11 @@ public class CommonFileName
 						}
 					}
 
-					pairs.add( pair );
-					files.remove( pair.getB() );
+					if ( pair != null )
+					{
+						pairs.add( pair );
+						files.remove( pair.getB() );
+					}
 				}
 			}
 		}

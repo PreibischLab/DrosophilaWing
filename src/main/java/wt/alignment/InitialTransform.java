@@ -53,8 +53,8 @@ public class InitialTransform
 
 		for ( final PointMatch pm : this.matches )
 		{
-			final float[] p1n = pm.getP1().getL().clone();
-			final float[] p2n = pm.getP2().getL().clone();
+			final double[] p1n = pm.getP1().getL().clone();
+			final double[] p2n = pm.getP2().getL().clone();
 
 			for ( int d = 0; d < n; ++d )
 			{

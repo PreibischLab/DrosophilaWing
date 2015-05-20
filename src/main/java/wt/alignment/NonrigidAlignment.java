@@ -32,7 +32,7 @@ public class NonrigidAlignment
 				Views.interpolate( Views.extendZero( img ), new NLinearInterpolatorFactory< FloatType >() ).realRandomAccess();
 
 		final double[] l1 = new double[ out.numDimensions() ];
-		final float[] l2 = new float[ out.numDimensions() ];
+		final double[] l2 = new double[ out.numDimensions() ];
 
 		final double s = subSampling == 0 ? 1 : Math.pow( 2, subSampling );
 
@@ -53,8 +53,8 @@ public class NonrigidAlignment
 	
 					t.transform( u, v, l1, true );
 	
-					l2[ 0 ] = (float)( l1[ 0 ] * s - offset[ 0 ] );
-					l2[ 1 ] = (float)( l1[ 1 ] * s - offset[ 1 ] );
+					l2[ 0 ] = ( l1[ 0 ] * s - offset[ 0 ] );
+					l2[ 1 ] = ( l1[ 1 ] * s - offset[ 1 ] );
 				}
 				else
 				{
