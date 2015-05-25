@@ -61,12 +61,12 @@ public class QuantifyGeneExpression
 	public Img< FloatType > lastMeasurement() { return measurement; }
 	public ImagePlus lastMeasurementImp() { return new ImagePlus( "measurement", ImageTools.wrap( measurement ) ); }
 
-	public void measure( final File alignedImage )
+	public void measure( final File alignedImage, final int numNeighbors, final float minValue )
 	{
 		final ImagePlus imp = new ImagePlus( alignedImage.getAbsolutePath() );
 		this.gene = ImageTools.convert( imp, imp.getStackSize() - 1 );
 
-		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( this.gene, new FloatType( 3 ) );
+		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( this.gene, new FloatType( minValue ) );
 
 		this.measurement = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 		//final ImagePlus avgImp = new ImagePlus( "voronoiId", ImageTools.wrap( avgImg ) );
@@ -93,7 +93,8 @@ public class QuantifyGeneExpression
 				//s.setValue( s.numPeaks() );
 			}
 
-			smoothValues( t.search(), t.locationMap(), 5 );
+			if ( numNeighbors > 0 )
+				smoothValues( t.search(), t.locationMap(), numNeighbors );
 
 			TesselationTools.drawValue( t.mask(), t.search().randomAccessible(), this.measurement );
 		}
@@ -142,7 +143,15 @@ public class QuantifyGeneExpression
 		return list;
 	}
 
-	public static void process( final File tesselationDir, final File imageDir, final List< String > alignedImages, final boolean showTesselation, final boolean showResult, final boolean saveResult )
+	public static void process(
+			final File tesselationDir,
+			final File imageDir,
+			final List< String > alignedImages,
+			final int numNeighbors,
+			final float minValue,
+			final boolean showTesselation,
+			final boolean showResult,
+			final boolean saveResult )
 	{
 		if ( !tesselationDir.exists() )
 			throw new RuntimeException( "Tesselation directory '" + tesselationDir.getAbsolutePath() + "' does not exist." );
@@ -180,7 +189,7 @@ public class QuantifyGeneExpression
 				continue;
 			}
 
-			qge.measure( wingFile );
+			qge.measure( wingFile, numNeighbors, minValue );
 			
 			stack.addSlice( wingFile.getName(), qge.lastMeasurementImp().getProcessor() );
 			//qge.lastMeasurementImp().show();
@@ -213,6 +222,6 @@ public class QuantifyGeneExpression
 		//files.add( new File( "wing_B16_dsRed_001.aligned.zip" ) );
 		//final File imageDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
 
-		process( tesselationDir, imageDir, alignedImages, false, true, false );
+		process( tesselationDir, imageDir, alignedImages, 5, 3, false, true, false );
 	}
 }

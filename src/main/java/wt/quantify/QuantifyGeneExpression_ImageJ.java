@@ -22,6 +22,8 @@ public class QuantifyGeneExpression_ImageJ implements PlugIn
 	public static boolean defaultDisplayTesselation = true;
 	public static boolean defaultDisplayStack = true;
 	public static boolean defaultSaveStack = true;
+	public static int defaultNumNeighbors = 5;
+	public static double defaultMinValue = 3;
 
 	@Override
 	public void run( final String arg )
@@ -31,6 +33,9 @@ public class QuantifyGeneExpression_ImageJ implements PlugIn
 		gd.addDirectoryField( "Tesselation_data_directory", defaultTesselationDir, 60 );
 		gd.addDirectoryField( "Directory_with_image_files", Alignment_ImageJ.defaultPath, 60 );
 		gd.addCheckbox( "Select_images_from_detected_aligned images in directory", defaultDisplayFileNames );
+		gd.addMessage( "" );
+		gd.addSlider( "Smoothing (#neighbor tiles)", 0, 20, defaultNumNeighbors );
+		gd.addNumericField( "Min_intensity of a peak", defaultMinValue, 1 );
 		gd.addMessage( "" );
 		gd.addCheckbox( "Display_quantified_images", defaultDisplayStack );
 		gd.addCheckbox( "Save_quantified_images", defaultSaveStack );
@@ -46,6 +51,7 @@ public class QuantifyGeneExpression_ImageJ implements PlugIn
 		defaultTesselationDir = gd.getNextString();
 		Alignment_ImageJ.defaultPath = gd.getNextString();
 		defaultDisplayFileNames = gd.getNextBoolean();
+		defaultNumNeighbors = (int)Math.round( gd.getNextNumber() );
 		defaultDisplayStack = gd.getNextBoolean();
 		defaultSaveStack = gd.getNextBoolean();
 		defaultDisplayTesselation = gd.getNextBoolean();
@@ -92,7 +98,9 @@ public class QuantifyGeneExpression_ImageJ implements PlugIn
 
 		try
 		{
-			QuantifyGeneExpression.process( new File( defaultTesselationDir ), new File( Alignment_ImageJ.defaultPath ), alignedImages, defaultDisplayTesselation, defaultDisplayStack, defaultSaveStack );
+			IJ.log( "num neighbors = " + defaultNumNeighbors );
+			IJ.log( "min value = " + defaultMinValue );
+			QuantifyGeneExpression.process( new File( defaultTesselationDir ), new File( Alignment_ImageJ.defaultPath ), alignedImages, defaultNumNeighbors, (float)defaultMinValue, defaultDisplayTesselation, defaultDisplayStack, defaultSaveStack );
 		}
 		catch ( Exception e)
 		{
