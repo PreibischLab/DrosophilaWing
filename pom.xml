@@ -9,7 +9,7 @@
 	</parent>
 
 	<artifactId>drosophila_wing_transform</artifactId>
-	<version>1.0.2</version>
+	<version>1.0.3-SNAPSHOT</version>
 
 	<name>DrosophilaWingTransformation</name>
 	<description>Align acquisitions of drosophila wings</description>
