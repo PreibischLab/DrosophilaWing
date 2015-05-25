@@ -27,20 +27,20 @@ import wt.alignment.ImageTools;
 import wt.quantify.localmaxima.LocalMaxima;
 import wt.quantify.localmaxima.RealPointValue;
 import wt.quantify.localmaxima.SimpleLocalMaxima;
-import wt.tesselation.LoadTesselation;
-import wt.tesselation.Search;
-import wt.tesselation.Segment;
-import wt.tesselation.TesselationThread;
-import wt.tesselation.TesselationTools;
-import wt.tesselation.pointupdate.DistancePointUpdater;
+import wt.tessellation.LoadTessellation;
+import wt.tessellation.Search;
+import wt.tessellation.Segment;
+import wt.tessellation.TessellationThread;
+import wt.tessellation.TessellationTools;
+import wt.tessellation.pointupdate.DistancePointUpdater;
 import wt.tools.CommonFileName;
 
 public class QuantifyGeneExpression
 {
 	/**
-	 * The tesselation is constant for all registered images to be analyzed
+	 * The tessellation is constant for all registered images to be analyzed
 	 */
-	final private LoadTesselation tesselation;
+	final private LoadTessellation tessellation;
 	final private Interval interval;
 	final LocalMaxima< FloatType > maxFinder;
 	final ArrayList< Roi > rois;
@@ -49,8 +49,8 @@ public class QuantifyGeneExpression
 
 	public QuantifyGeneExpression( final File roiDirectory )
 	{
-		this.tesselation = new LoadTesselation( roiDirectory );
-		this.interval = this.tesselation.interval();
+		this.tessellation = new LoadTessellation( roiDirectory );
+		this.interval = this.tessellation.interval();
 		this.rois = new ArrayList< Roi >();
 		this.maxFinder = new SimpleLocalMaxima();
 	}
@@ -72,7 +72,7 @@ public class QuantifyGeneExpression
 		//final ImagePlus avgImp = new ImagePlus( "voronoiId", ImageTools.wrap( avgImg ) );
 
 		// reset all values
-		for ( final TesselationThread t : tesselation.tesselations() )
+		for ( final TessellationThread t : tessellation.tessellations() )
 		{
 			for ( final Segment s : t.search().segments() )
 				s.resetPeaks();
@@ -96,7 +96,7 @@ public class QuantifyGeneExpression
 			if ( numNeighbors > 0 )
 				smoothValues( t.search(), t.locationMap(), numNeighbors );
 
-			TesselationTools.drawValue( t.mask(), t.search().randomAccessible(), this.measurement );
+			TessellationTools.drawValue( t.mask(), t.search().randomAccessible(), this.measurement );
 		}
 	}
 
@@ -130,13 +130,13 @@ public class QuantifyGeneExpression
 		}
 	}
 
-	public LoadTesselation tesselation() { return tesselation; }
+	public LoadTessellation tessellation() { return tessellation; }
 
 	public Collection< RealPoint > centerOfMasses()
 	{
 		final ArrayList< RealPoint > list = new ArrayList< RealPoint >();
 
-		for ( final TesselationThread t : tesselation.tesselations() )
+		for ( final TessellationThread t : tessellation.tessellations() )
 			for ( final Segment s : t.search().segments() )
 			list.add( new RealPoint( s.centerOfMass() ) );
 
@@ -144,20 +144,20 @@ public class QuantifyGeneExpression
 	}
 
 	public static void process(
-			final File tesselationDir,
+			final File tessellationDir,
 			final File imageDir,
 			final List< String > alignedImages,
 			final int numNeighbors,
 			final float minValue,
-			final boolean showTesselation,
+			final boolean showTessellation,
 			final boolean showResult,
 			final boolean saveResult )
 	{
-		if ( !tesselationDir.exists() )
-			throw new RuntimeException( "Tesselation directory '" + tesselationDir.getAbsolutePath() + "' does not exist." );
+		if ( !tessellationDir.exists() )
+			throw new RuntimeException( "Tessellation directory '" + tessellationDir.getAbsolutePath() + "' does not exist." );
 
-		if ( !tesselationDir.isDirectory() )
-			throw new RuntimeException( "Tesselation directory '" + tesselationDir.getAbsolutePath() + "' is not a directory." );
+		if ( !tessellationDir.isDirectory() )
+			throw new RuntimeException( "Tessellation directory '" + tessellationDir.getAbsolutePath() + "' is not a directory." );
 
 		if ( !imageDir.exists() )
 			throw new RuntimeException( "Image directory '" + imageDir.getAbsolutePath() + "' does not exist." );
@@ -165,12 +165,12 @@ public class QuantifyGeneExpression
 		if ( !imageDir.isDirectory() )
 			throw new RuntimeException( "Image directory '" + imageDir.getAbsolutePath() + "' is not a directory." );
 
-		final QuantifyGeneExpression qge = new QuantifyGeneExpression( tesselationDir );
+		final QuantifyGeneExpression qge = new QuantifyGeneExpression( tessellationDir );
 
-		if ( showTesselation )
+		if ( showTessellation )
 		{
-			final ImagePlus impId = qge.tesselation().impId( true );
-			TesselationTools.drawRealPoint( impId, qge.centerOfMasses() );
+			final ImagePlus impId = qge.tessellation().impId( true );
+			TessellationTools.drawRealPoint( impId, qge.centerOfMasses() );
 			impId.updateAndDraw();
 			impId.show();
 		}
@@ -214,7 +214,7 @@ public class QuantifyGeneExpression
 		new ImageJ();
 
 		final File imageDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
-		final File tesselationDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/SegmentedWingTemplate" );
+		final File tessellationDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/SegmentedWingTemplate" );
 
 		final List< String > alignedImages = CommonFileName.getAlignedImages( imageDir );
 
@@ -222,6 +222,6 @@ public class QuantifyGeneExpression
 		//files.add( new File( "wing_B16_dsRed_001.aligned.zip" ) );
 		//final File imageDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
 
-		process( tesselationDir, imageDir, alignedImages, 5, 3, false, true, false );
+		process( tessellationDir, imageDir, alignedImages, 5, 3, false, true, false );
 	}
 }

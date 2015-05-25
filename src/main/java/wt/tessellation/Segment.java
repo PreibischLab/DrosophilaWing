@@ -1,4 +1,4 @@
-package wt.tesselation;
+package wt.tessellation;
 
 import java.util.ArrayList;
 

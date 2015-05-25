@@ -1,4 +1,4 @@
-package wt.tesselation;
+package wt.tessellation;
 
 import net.imglib2.IterableRealInterval;
 import net.imglib2.KDTree;

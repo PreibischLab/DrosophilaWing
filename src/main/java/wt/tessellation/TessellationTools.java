@@ -1,4 +1,4 @@
-package wt.tesselation;
+package wt.tessellation;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -36,7 +36,7 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 
-public class TesselationTools
+public class TessellationTools
 {
 	public static void drawExpandShrink( final ImagePlus imp, final Iterable< ? extends RealPoint > now, final Iterable< ? extends RealPoint > before )
 	{
@@ -445,7 +445,7 @@ public class TesselationTools
 		return elements;
 	}
 
-	public static void writePoints( final TesselationThread t )
+	public static void writePoints( final TessellationThread t )
 	{
 		final PrintWriter out = TextFileAccess.openFileWrite( "segment_" + t.id() + ".points.txt" );
 
@@ -458,7 +458,7 @@ public class TesselationTools
 		out.close();
 	}
 
-	public static String currentState( final TesselationThread t )
+	public static String currentState( final TessellationThread t )
 	{
 		return 
 				t.iteration() + "\t" +
@@ -472,7 +472,7 @@ public class TesselationTools
 				t.lastdSigma();
 	}
 
-	public static void printCurrentState( final TesselationThread t )
+	public static void printCurrentState( final TessellationThread t )
 	{
 		String s = currentState( t );
 

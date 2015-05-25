@@ -1,4 +1,4 @@
-package wt.tesselation.pointupdate;
+package wt.tessellation.pointupdate;
 
 import java.util.Collection;
 

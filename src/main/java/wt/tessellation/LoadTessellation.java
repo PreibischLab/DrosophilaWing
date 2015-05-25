@@ -1,4 +1,4 @@
-package wt.tesselation;
+package wt.tessellation;
 
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -14,26 +14,26 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
 import wt.alignment.ImageTools;
 
-public class LoadTesselation
+public class LoadTessellation
 {
 	final Interval interval;
 	final List< Roi > segments;
 	final int targetArea;
-	final ArrayList< TesselationThread > threads;
+	final ArrayList< TessellationThread > threads;
 
 	ImagePlus impArea, impId;
 	Img< FloatType > imgArea, imgId;
 
-	public LoadTesselation( final File roiData )
+	public LoadTessellation( final File roiData )
 	{
 		this(
-				TesselationTools.templateDimensions( roiData ),
-				TesselationTools.loadROIs( TesselationTools.assembleSegments( roiData ) ),
-				TesselationTools.assemblePoints( roiData ),
-				TesselationTools.targetArea( roiData ) );
+				TessellationTools.templateDimensions( roiData ),
+				TessellationTools.loadROIs( TessellationTools.assembleSegments( roiData ) ),
+				TessellationTools.assemblePoints( roiData ),
+				TessellationTools.targetArea( roiData ) );
 	}
 
-	public LoadTesselation( final Interval interval, final List< Roi > segments, final List< File > currentState, final int targetArea )
+	public LoadTessellation( final Interval interval, final List< Roi > segments, final List< File > currentState, final int targetArea )
 	{
 		if ( interval == null )
 			throw new RuntimeException( "Interval is null, error loading it?" );
@@ -42,7 +42,7 @@ public class LoadTesselation
 			throw new RuntimeException( "ROI segment list is null, error loading it?" );
 
 		if ( currentState == null )
-			throw new RuntimeException( "Files with tesselation are missing, error loading it?" );
+			throw new RuntimeException( "Files with tessellation are missing, error loading it?" );
 
 		if ( targetArea < 0 )
 			throw new RuntimeException( "Target area for individual segments could not be read." );
@@ -51,12 +51,12 @@ public class LoadTesselation
 		this.segments = segments;
 		this.targetArea = targetArea;
 
-		this.threads = new ArrayList< TesselationThread >();
+		this.threads = new ArrayList< TessellationThread >();
 		for ( int i = 0; i < segments.size(); ++i )
-			this.threads.add( new TesselationThread( i, segments.get( i ), interval, targetArea, currentState.get( i ) ) );
+			this.threads.add( new TessellationThread( i, segments.get( i ), interval, targetArea, currentState.get( i ) ) );
 	}
 
-	public List< TesselationThread > tesselations() { return threads; }
+	public List< TessellationThread > tessellations() { return threads; }
 	public Interval interval() { return interval; }
 
 	public void renderIdImage( final boolean normalizeIds )
@@ -67,12 +67,12 @@ public class LoadTesselation
 			this.impId = new ImagePlus( "voronoiId", ImageTools.wrap( imgId ) );
 		}
 
-		for ( final TesselationThread tt : threads )
+		for ( final TessellationThread tt : threads )
 		{
 			if ( normalizeIds )
-				TesselationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId, tt.search().realInterval );
+				TessellationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId, tt.search().realInterval );
 			else
-				TesselationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId );
+				TessellationTools.drawId( tt.mask(), tt.search().randomAccessible, imgId );
 		}
 
 		this.impId.resetDisplayRange();
@@ -85,8 +85,8 @@ public class LoadTesselation
 		this.impArea = new ImagePlus( "voronoiArea", ImageTools.wrap( imgArea ) );
 		this.impArea.setDisplayRange( 0, targetArea * 2 );
 
-		for ( final TesselationThread tt : threads )
-			TesselationTools.drawArea( tt.mask(), tt.search().randomAccessible, imgArea );
+		for ( final TessellationThread tt : threads )
+			TessellationTools.drawArea( tt.mask(), tt.search().randomAccessible, imgArea );
 
 		impArea.updateAndDraw();
 	}
@@ -127,7 +127,7 @@ public class LoadTesselation
 	{
 		new ImageJ();
 
-		final LoadTesselation dt = new LoadTesselation( new File( "SegmentedWingTemplate" ) );
+		final LoadTessellation dt = new LoadTessellation( new File( "SegmentedWingTemplate" ) );
 
 		dt.impArea().show();
 		dt.impId( true ).show();

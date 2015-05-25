@@ -1,6 +1,6 @@
-package wt.tesselation.error;
+package wt.tessellation.error;
 
-import wt.tesselation.Segment;
+import wt.tessellation.Segment;
 
 
 public class LinearError implements Error
