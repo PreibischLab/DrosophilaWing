@@ -9,6 +9,7 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
@@ -190,6 +191,7 @@ public class NonrigidAlignment
 			final int subSampling,
 			final double imageWeight )
 	{
+		// this changes the source image
 		String s = adjustImageIntensities( source, target, sourceOutOfBoundsValue, targetOutOfBoundsValue );
 
 		IJ.log( s );
@@ -212,6 +214,7 @@ public class NonrigidAlignment
 		log += s;
 		*/
 
+		// these are the images we will run bunwarpj on. For testing, save those and run Bunwarpj from within Fiji.
 		final ImagePlus targetImp = new ImagePlus( "Target", ImageTools.wrap( target ).convertToByteProcessor( false ) );
 		final ImagePlus sourceImp = new ImagePlus( "Source", ImageTools.wrap( source ).convertToByteProcessor( false ) );
 

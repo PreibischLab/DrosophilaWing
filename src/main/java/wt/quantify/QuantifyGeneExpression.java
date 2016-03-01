@@ -14,13 +14,22 @@ import java.util.HashMap;
 import java.util.List;
 
 import net.imglib2.Interval;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
+import net.imglib2.RealPointSampleList;
 import net.imglib2.RealRandomAccess;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.interpolation.neighborsearch.NearestNeighborSearchInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.multithreading.SimpleMultiThreading;
 import net.imglib2.neighborsearch.KNearestNeighborSearch;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
+import net.imglib2.neighborsearch.NearestNeighborSearch;
+import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import wt.alignment.ImageTools;
@@ -68,6 +77,8 @@ public class QuantifyGeneExpression
 
 		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( this.gene, new FloatType( minValue ) );
 
+		final Collection< RealPointValue< FloatType > > maxTmp = new ArrayList< RealPointValue< FloatType > >();
+
 		this.measurement = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 		//final ImagePlus avgImp = new ImagePlus( "voronoiId", ImageTools.wrap( avgImg ) );
 
@@ -85,8 +96,9 @@ public class QuantifyGeneExpression
 				{
 					rra.setPosition( max );
 					rra.get().addPeak( max.get().get() );
+					maxTmp.add( max );
 				}
-	
+
 			for ( final Segment s : t.search().segments() )
 			{
 				s.setValue( s.sumPeakIntensity() / s.numPeaks() );
@@ -98,7 +110,13 @@ public class QuantifyGeneExpression
 
 			TessellationTools.drawValue( t.mask(), t.search().randomAccessible(), this.measurement );
 		}
+
+		ImagePlus tmp = new ImagePlus( "", ImageTools.wrap( this.gene ) );
+		//TessellationTools.drawRealPoint( tmp, maxTmp );
+		tmp.show();
+		SimpleMultiThreading.threadHaltUnClean();
 	}
+
 
 	public static void smoothValues( final Search< Segment > search, final HashMap< Integer, RealPoint > locationMap, final int numNeighbors )
 	{
@@ -213,15 +231,15 @@ public class QuantifyGeneExpression
 	{
 		new ImageJ();
 
-		final File imageDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
-		final File tessellationDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/SegmentedWingTemplate" );
+		//final File imageDir = new File( "/Users/spreibi/Documents/Drosophila Wing Gompel/samples/B16" );
+		//final List< String > alignedImages = CommonFileName.getAlignedImages( imageDir );
 
-		final List< String > alignedImages = CommonFileName.getAlignedImages( imageDir );
+		final File tessellationDir = new File( "/Users/spreibi/Documents/Drosophila Wing Gompel/SegmentedWingTemplate" );
 
-		//final ArrayList< String > files = new ArrayList< String >();
-		//files.add( new File( "wing_B16_dsRed_001.aligned.zip" ) );
-		//final File imageDir = new File( "/Users/preibischs/Documents/Drosophila Wing Gompel/samples/B16" );
+		final ArrayList< String > alignedImages = new ArrayList< String >();
+		alignedImages.add( "909_dsRed_001.tif.aligned.zip" );
+		final File imageDir = new File( "." );
 
-		process( tessellationDir, imageDir, alignedImages, 5, 3, false, true, false );
+		process( tessellationDir, imageDir, alignedImages, 5, 3, true, true, false );
 	}
 }

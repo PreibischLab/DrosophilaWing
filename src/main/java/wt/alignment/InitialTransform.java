@@ -70,18 +70,22 @@ public class InitialTransform
 
 	public boolean findInitialModel()
 	{
-		// Perform matching for normal and mirrored image in case the wing is flipped
+		// Perform matching for normal and mirrored image in case the wing is flipped (parameters are set in the method)
 		final Pair< Double, List< PointMatch > > normal = computeSIFT( wing, template );
 		String out = "normal: inliers=" + normal.getB().size() + ", error=" + decimalFormat.format( normal.getA() );
 		IJ.log( out );
 		log += out + "\n";
 
+		// mirror the image and try if it is better
 		Mirror.mirror( wing, 0, Threads.numThreads() );
+
 		final Pair< Double, List< PointMatch > > mirror = computeSIFT( wing, template );
 		out = "mirror: inliers=" + mirror.getB().size() + ", error=" + decimalFormat.format( mirror.getA() );
 		IJ.log( out );
 		log += out + "\n";
 
+		// decide which one was better
+		// the error can be pretty equal, so we use a combination of error and number of found correspondences
 		if ( normal.getB().size() > 0 && mirror.getB().size() == 0 )
 		{
 			this.mirror = false;
@@ -99,6 +103,7 @@ public class InitialTransform
 			this.mirror = true;
 		}
 
+		// we set the correspondences to either the normal or mirrored images
 		final Pair< Double, List< PointMatch > > siftResult;
 
 		if ( this.mirror )
@@ -114,6 +119,9 @@ public class InitialTransform
 			return false;
 		}
 
+		// now that we have our correspondences that we trust from the similaritymodel,
+		// we fit an affinemodel using the exact same correspondences. This affine model
+		// will then be applied prior to running the nonrigid transformation using bunwarpj
 		this.model = new AffineModel2D();
 
 		try

@@ -20,6 +20,8 @@ public class ImageTools
 	{
 		if ( filepart.exists() )
 		{
+			System.out.println( "Opening: " + filepart.getAbsolutePath() );
+
 			final ImagePlus imp = new ImagePlus( filepart.getAbsolutePath() );
 	
 			if ( imp.getStack().getSize() != 2 )
