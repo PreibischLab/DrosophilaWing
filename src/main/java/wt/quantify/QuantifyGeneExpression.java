@@ -77,7 +77,7 @@ public class QuantifyGeneExpression
 
 		final Collection< RealPointValue< FloatType > > maxima = maxFinder.maxima( this.gene, new FloatType( minValue ) );
 
-		final Collection< RealPointValue< FloatType > > maxTmp = new ArrayList< RealPointValue< FloatType > >();
+		//final Collection< RealPointValue< FloatType > > maxTmp = new ArrayList< RealPointValue< FloatType > >();
 
 		this.measurement = ArrayImgs.floats( interval.dimension( 0 ), interval.dimension( 1 ) );
 		//final ImagePlus avgImp = new ImagePlus( "voronoiId", ImageTools.wrap( avgImg ) );
@@ -96,7 +96,7 @@ public class QuantifyGeneExpression
 				{
 					rra.setPosition( max );
 					rra.get().addPeak( max.get().get() );
-					maxTmp.add( max );
+					//maxTmp.add( max );
 				}
 
 			for ( final Segment s : t.search().segments() )
@@ -111,10 +111,12 @@ public class QuantifyGeneExpression
 			TessellationTools.drawValue( t.mask(), t.search().randomAccessible(), this.measurement );
 		}
 
+		/*
 		ImagePlus tmp = new ImagePlus( "", ImageTools.wrap( this.gene ) );
 		//TessellationTools.drawRealPoint( tmp, maxTmp );
 		tmp.show();
 		SimpleMultiThreading.threadHaltUnClean();
+		*/
 	}
 
 
