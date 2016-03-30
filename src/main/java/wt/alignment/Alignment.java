@@ -42,7 +42,7 @@ public class Alignment
 		// find the initial alignment using SIFT feature matching (and if it is mirrored)
 		this.transform1 = new InitialTransform( template, wing );
 
-		// the object for the nonrigid alignment (for later down)
+		// the object for the non-rigid alignment (for later down)
 		this.nra = new NonrigidAlignment();
 
 		// SIFT feature matching using SimilarityModel
@@ -65,20 +65,25 @@ public class Alignment
 
 		// preprocess and transform in order to run the bunwarpj properly
 		final Preprocess pTemplate = new Preprocess( template );
+		
 		// compute a big Gauss and subtract it
 		pTemplate.homogenize();
+		// TODO: Fourier filter
 		// extend the image by 20%, use the simple method - and rembember the offset (how much we extended)
 		this.offset = Util.getArrayFromValue( pTemplate.extend( 0.2f, true ), wing.numDimensions() );
 
 		// preprocess and transform in order to run the bunwarpj properly
 		final Preprocess pWing = new Preprocess( wing );
+		
 		// compute a big Gauss and subtract it
 		pWing.homogenize();
+		
 		// extend the image by 20%, use the simple method
 		pWing.extend( 0.2f, true );
 
 		// transform pWing using the affine model from the initial transform
 		final AffineModel2D model = new AffineModel2D();
+		
 		// for that, we need to update the transformation as we extended the images
 		model.fit( transform1.createUpdatedMatches( this.offset ) );
 		pWing.transform( model );
@@ -122,14 +127,14 @@ public class Alignment
 	public static void process( final File templateFile, final File dirPairs, final List< Pair< String, String > > pairs, final double imageWeight, final boolean showSummary, final boolean saveSummary ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
-
-		final ImageStack stackGene = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
+		
+		final ImageStack stackGene        = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 		final ImageStack stackBrightfield = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
-
+		
 		for ( final Pair< String, String > pair : pairs )
 		{
 			final File wingFile;
-
+			
 			if ( pair.getB() == null )
 				wingFile = new File( pair.getA() ); // already two images in one file, just use the first file
 			else
@@ -137,25 +142,28 @@ public class Alignment
 
 			final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.zip" );
 			final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.txt" );
-
+			
 			if ( wingSavedFile.exists() && wingSavedLog.exists() )
 			{
 				System.out.println( wingFile.getAbsolutePath() + " already processed, ignoring. Delete " + wingSavedFile.getAbsoluteFile() + " to override." );
 				continue;
 			}
-
-			// this one figures out if it is two slices, or find the corresponding file and see which one is brighter and sort it accordingly
+			
+			// this one figures out if it is two slices, or find the corresponding file 
+			// it see which one is brighter and sort it accordingly
 			final ImagePlus wingImp = ImageTools.loadImage( wingFile );
 			if ( wingImp == null )
 				throw new RuntimeException();
-
+			
 			final Img< FloatType > template = ImageTools.convert( templateImp, 0 );
-			final Img< FloatType > wing = ImageTools.convert( wingImp, 0 );
+			final Img< FloatType > wing     = ImageTools.convert( wingImp, 0 );
 			final Img< FloatType > wingGene = ImageTools.convert( wingImp, 1 );
-
+	
+			
 			// this is the main alignment work done here
 			final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight );
 	
+			// saves ?? to hard drive TODO
 			final ImagePlus aligned = alignment.getAlignedImage();
 			if ( aligned != null )
 			{
@@ -171,13 +179,13 @@ public class Alignment
 				stackGene.addSlice( wingFile.getName(), wingGene );
 			}
 		}
-
+		
 		if ( showSummary && stackGene.getSize() > 0 && stackBrightfield.getSize() > 0  )
 		{
 			new ImagePlus( "all_gene", stackGene ).show();
 			new ImagePlus( "all_brightfield", stackBrightfield ).show();
 		}
-
+		
 		if ( saveSummary && stackGene.getSize() > 0 && stackBrightfield.getSize() > 0 )
 		{
 			if ( stackGene.getSize() == 1 )

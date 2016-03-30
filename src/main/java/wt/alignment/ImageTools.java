@@ -97,7 +97,12 @@ public class ImageTools
 
 		return sum.getSum() / (double)img.size();
 	}
-
+	
+	/**
+	 * Convert to float the z page of the ImagePlus
+	 * @param imp - input image ImagePlus
+	 * @param z - the image directory
+	 */
 	public static Img< FloatType > convert( final ImagePlus imp, final int z )
 	{
 		final ImageProcessor ip = imp.getStack().getProcessor( z + 1 );
