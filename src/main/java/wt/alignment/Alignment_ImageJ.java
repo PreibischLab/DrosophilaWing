@@ -90,9 +90,15 @@ public class Alignment_ImageJ implements PlugIn
 		for ( final Pair< String, String > pair : pairs )
 			IJ.log( pair.getA() + " <> " + pair.getB() );
 
+		AlignmentProcess currentProcess = new AlignmentProcess();
+		currentProcess.setTemplate(   new File( defaultTemplate  ))
+					  .setPairs(      new File( defaultPath ), pairs )
+					  .setImageWeight( defaultImageWeight )
+					  .setShowSummary( defaultDisplayStack )
+					  .setSaveSummary( defaultSaveStack );
 		try
 		{
-			Alignment.process( new File( defaultTemplate ), new File( defaultPath ), pairs, defaultImageWeight, defaultDisplayStack, defaultSaveStack );
+			currentProcess.run();
 		}
 		catch ( Exception e)
 		{

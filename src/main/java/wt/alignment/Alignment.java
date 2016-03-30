@@ -112,21 +112,114 @@ public class Alignment
 	}
 
 	public ImagePlus getAlignedImage() { return aligned; }
-
-	/**
-	 * 
-	 * @param templateFile - to register to
-	 * @param dirPairs - the image directory
-	 * @param pairs - the pairs (brightfield, gene) of images for each wing - or second one is null if first image contains both as stack
-	 * @param imageWeight - for bUnwarpJ
-	 * @param showSummary - show registered images
-	 * @param saveSummary - save file with registered images
-	 * @throws NotEnoughDataPointsException
-	 * @throws IllDefinedDataPointsException
-	 */
-	public static void process( final File templateFile, final File dirPairs, final List< Pair< String, String > > pairs, final double imageWeight, final boolean showSummary, final boolean saveSummary ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	
+	public static void main( String args[] ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
-		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
+		new ImageJ();
+		
+		AlignmentProcess mainProcessing = new AlignmentProcess();
+		mainProcessing.singleFileAlignmentTest();
+		/*
+		mainProcessing.setPairsDir(new File("/Users/spreibi/Documents/Drosophila Wing Gompel/samples/909"));
+		mainProcessing.run();
+		*/
+	}
+}
+
+/**
+ * 
+ * @param templateFile - to register to
+ * @param dirPairs - the image directory
+ * @param pairs - the pairs (brightfield, gene) of images for each wing - or second one is null if first image contains both as stack
+ * @param imageWeight - for bUnwarpJ
+ * @param showSummary - show registered images
+ * @param saveSummary - save file with registered images
+ * @throws NotEnoughDataPointsException
+ * @throws IllDefinedDataPointsException
+ */
+class AlignmentProcess
+{
+	protected File templateFile = new File("wing_template_A13_2014_01_31.tif");
+	protected File dirRegistered  = null;
+	protected File dirPairs      = null;
+	protected List< Pair< String, String > > pairs = null;;
+	protected double imageWeight  = 0.5;;
+	protected boolean showSummary = true;
+	protected boolean saveSummary = false;
+	
+	// setters
+	AlignmentProcess setTemplate(   File    _templateFile )	{ templateFile = _templateFile; return this;}
+	AlignmentProcess setImageWeight(double  _imageWeight  )	{ imageWeight  = _imageWeight;	return this;}
+	AlignmentProcess setShowSummary(boolean _showSummary  )	{ showSummary  = _showSummary;	return this;}
+	AlignmentProcess setSaveSummary(boolean _saveSummary  )	{ saveSummary  = _saveSummary;	return this;}
+	
+	AlignmentProcess setPairs(List< Pair< String, String > > _pairs ) {
+		pairs    = _pairs;
+		return this;
+	}
+	AlignmentProcess setPairsDir(File _dirPairs ) {
+		dirPairs = _dirPairs;
+		return this;
+	}
+	AlignmentProcess setPairs(File _dirPairs, List< Pair< String, String > > _pairs ) {
+		setPairsDir(_dirPairs).setPairs(_pairs);
+		return this;
+	}
+	
+	AlignmentProcess addToPair(String _brightfieldName, String _fluorescenceName){
+		if (pairs == null)
+			pairs = new ArrayList< Pair< String, String > >();
+		
+		pairs.add( new ValuePair< String, String >( _brightfieldName, _fluorescenceName ) );
+		return this;
+	}
+	AlignmentProcess addToPair(String _multiPage){
+		return addToPair(_multiPage, null);
+	}
+	
+	/**
+	 * creates a directory for registered files ( current directory added with "registered"
+	 * 
+	 */
+	void gessRegisteredDirectory()
+	{
+		if (dirPairs.equals(new File(""))){
+			dirRegistered = new File("");
+		} else {
+			String lastPath = dirPairs.getAbsolutePath();
+			lastPath = lastPath.substring(lastPath.lastIndexOf(File.separator)+1);
+			
+			dirRegistered = new File(dirPairs.getParentFile(), lastPath + "_registered" );
+			dirRegistered.mkdir();
+		}
+	}
+	
+	public void singleFileAlignmentTest() throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	{
+		// PROCESS ONE FILE (contains two slices brightfield & fluorescence) in the data directory "data/wings" (relative)
+		setPairsDir(new File( "data/wings" ));
+		setTemplate(new File( "data/wings/wing_template_A13_2014_01_31.tif" ));// what to register it to
+		addToPair("909_dsRed_001.tif");
+ 		run();
+	}
+	
+	void run() throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	{
+		// check the input arguments
+		if (templateFile == null) {return;}
+		if (dirPairs     == null) {return;}
+		if (pairs        == null) {
+			setPairs(CommonFileName.pairedImages( dirPairs ));
+			for ( final Pair< String, String > pair : pairs )
+				System.out.println( pair.getA() + " <-> " + pair.getB() );
+		}
+		if (dirRegistered == null){
+			gessRegisteredDirectory();
+		}
+		
+		
+		
+		final ImagePlus templateImp = new ImagePlus( templateFile.getPath() );
 		
 		final ImageStack stackGene        = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 		final ImageStack stackBrightfield = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
@@ -136,16 +229,15 @@ public class Alignment
 			final File wingFile;
 			
 			if ( pair.getB() == null )
-				wingFile = new File( pair.getA() ); // already two images in one file, just use the first file
+				wingFile = new File(dirPairs, pair.getA() ); // already two images in one file, just use the first file
 			else
 				wingFile = new File( dirPairs, pair.getA().substring( 0, pair.getA().indexOf( ".tif" ) ) ); // two different images
-
-			final File wingSavedFile = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.zip" );
-			final File wingSavedLog = new File( wingFile.getAbsolutePath().substring( 0, wingFile.getAbsolutePath().length() ) + ".aligned.txt" );
+			final File wingSavedFile = new File( dirRegistered, wingFile.getName() + ".aligned.zip" );
+			final File wingSavedLog  = new File( dirRegistered, wingFile.getName() + ".aligned.txt" );
 			
 			if ( wingSavedFile.exists() && wingSavedLog.exists() )
 			{
-				System.out.println( wingFile.getAbsolutePath() + " already processed, ignoring. Delete " + wingSavedFile.getAbsoluteFile() + " to override." );
+				System.out.println( wingFile.getAbsolutePath() + " already processed, ignoring. If you want to reprocess, delete " + wingSavedFile.getAbsoluteFile() + " to override." );
 				continue;
 			}
 			
@@ -190,47 +282,14 @@ public class Alignment
 		{
 			if ( stackGene.getSize() == 1 )
 			{
-				new FileSaver( new ImagePlus( "all_gene", stackGene ) ).saveAsTiff( new File( dirPairs, "all_gene.tif" ).getAbsolutePath() );
-				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiff( new File( dirPairs, "all_brightfield.tif" ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_gene"       , stackGene        ) ).saveAsTiff( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiff( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
 			}
 			else
 			{
-				new FileSaver( new ImagePlus( "all_gene", stackGene ) ).saveAsTiffStack( new File( dirPairs, "all_gene.tif" ).getAbsolutePath() );
-				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiffStack( new File( dirPairs, "all_brightfield.tif" ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_gene"       , stackGene        ) ).saveAsTiffStack( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiffStack( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
 			}
 		}
-	}
-
-	public static void main( String args[] ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
-	{
-		new ImageJ();
-
-		// list of files to process
-		final List< Pair< String, String > > pairs;
-
-		// what to register it to
-		final File templateFile = new File( "wing_template_A13_2014_01_31.tif" );
-
-		// PROCESS ONE FILE (contains two slices brightfield & fluorescence) in the workspace directory "" (relative)
-		pairs = new ArrayList< Pair< String, String > >();
-
-		pairs.add( new ValuePair< String, String >( "909_dsRed_001.tif", null ) );
-		// pairs.add( new ValuePair< String, String >( "909_dsRed_002.tif", null ) );
-		process( templateFile, new File( "" ), pairs, 0.5, true, false );
-
-		/*
-		// PROCESS DIRECTORY
-		
-		final File dir = new File( "/Users/spreibi/Documents/Drosophila Wing Gompel/samples/909" );
-
-		// assign the kind of random pairs of images from the directory
-		pairs = CommonFileName.pairedImages( dir );
-
-		for ( final Pair< String, String > pair : pairs )
-			System.out.println( pair.getA() + " <> " + pair.getB() );
-
-		// process the directory
-		process( templateFile, dir, pairs, 0.5, true, false );
-		*/
 	}
 }
