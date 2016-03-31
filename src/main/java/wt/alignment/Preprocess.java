@@ -28,7 +28,7 @@ public class Preprocess
 		this.input = img;
 	}
 
-	public Img< FloatType > input() { return input; }
+	public Img< FloatType > input()  { return input; }
 	public Img< FloatType > output() { return output; }
 
 	public void homogenize()

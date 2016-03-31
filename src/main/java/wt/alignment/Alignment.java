@@ -153,14 +153,8 @@ class AlignmentProcess
 	AlignmentProcess setShowSummary(boolean _showSummary  )	{ showSummary  = _showSummary;	return this;}
 	AlignmentProcess setSaveSummary(boolean _saveSummary  )	{ saveSummary  = _saveSummary;	return this;}
 	
-	AlignmentProcess setPairs(List< Pair< String, String > > _pairs ) {
-		pairs    = _pairs;
-		return this;
-	}
-	AlignmentProcess setPairsDir(File _dirPairs ) {
-		dirPairs = _dirPairs;
-		return this;
-	}
+	AlignmentProcess setPairs(List< Pair< String, String > > _pairs ) { pairs = _pairs; return this;}
+	AlignmentProcess setPairsDir(File _dirPairs ) { dirPairs = _dirPairs; return this;}
 	AlignmentProcess setPairs(File _dirPairs, List< Pair< String, String > > _pairs ) {
 		setPairsDir(_dirPairs).setPairs(_pairs);
 		return this;
