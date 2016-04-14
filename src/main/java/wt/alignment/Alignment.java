@@ -180,12 +180,18 @@ class AlignmentProcess
 		if (dirPairs.equals(new File(""))){
 			dirRegistered = new File("");
 		} else {
-			String lastPath = dirPairs.getAbsolutePath();
-			lastPath = lastPath.substring(lastPath.lastIndexOf(File.separator)+1);
-			
-			dirRegistered = new File(dirPairs.getParentFile(), lastPath + "_registered" );
+			dirRegistered = gessRegisteredDirectory(dirPairs);
 			dirRegistered.mkdir();
 		}
+	}
+	
+	static File gessRegisteredDirectory(final File _inputDirectory)
+	{
+		
+		String lastPath = _inputDirectory.getAbsolutePath();
+		lastPath = lastPath.substring(lastPath.lastIndexOf(File.separator)+1);
+		
+		return  new File(_inputDirectory.getParentFile(), lastPath + "_registered" );
 	}
 	
 	public void singleFileAlignmentTest() throws NotEnoughDataPointsException, IllDefinedDataPointsException
