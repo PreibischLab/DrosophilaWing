@@ -142,8 +142,8 @@ class AlignmentProcess
 	protected File templateFile = new File("wing_template_A13_2014_01_31.tif");
 	protected File dirRegistered  = null;
 	protected File dirPairs      = null;
-	protected List< Pair< String, String > > pairs = null;;
-	protected double imageWeight  = 0.5;;
+	protected List< Pair< String, String > > pairs = null;
+	protected double imageWeight  = 0.5;
 	protected boolean showSummary = true;
 	protected boolean saveSummary = false;
 	
