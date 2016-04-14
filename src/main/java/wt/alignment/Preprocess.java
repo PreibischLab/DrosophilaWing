@@ -6,6 +6,7 @@ import ij.ImageStack;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.NoninvertibleModelException;
 import net.imglib2.Cursor;
+import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.algorithm.gauss3.Gauss3;
@@ -236,31 +237,34 @@ public class Preprocess
 
 		// compute the average border intensity
 		// strictly 2d!
-		final ArrayList< Coordinates > borderPixelList = 
-				new ArrayList< Coordinates >((int) (2*output.dimension( 0 ) + 2*output.dimension( 1 ) - 4));
+		final ArrayList< Point > borderPixelList = 
+				new ArrayList< Point >();
 		int row=0,col=0;
 		do {
-			borderPixelList.add(new Coordinates(col,row));
+			borderPixelList.add(new Point(row, col));
 			row++;
 		} while ( row < output.dimension( 0 ) - 1 );
 
 		do {
 			col++;
-			borderPixelList.add(new Coordinates(col,row));
+			borderPixelList.add(new Point(row, col));
 		} while ( col < output.dimension( 1 ) - 1 );
 
 		do {
 			row--;
-			borderPixelList.add(new Coordinates(col,row));
+			borderPixelList.add(new Point(row, col));
 		} while ( row > 0 );
 
 		do {
 			col--;
-			borderPixelList.add(new Coordinates(col,row));
+			borderPixelList.add(new Point(row, col));
 		} while ( col > 0 );
 		
 		this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
 
+		// median : 245.23547
+		// median : 249.18938
+		
 		return avgBorderValue1;
 	}
 	

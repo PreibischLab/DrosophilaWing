@@ -1,67 +1,75 @@
 package wt.alignment;
 
-import net.imglib2.img.Img;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.RandomAccess;
 import java.util.ArrayList;
 
-public class Quicksort
+import net.imglib2.Point;
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
+import net.imglib2.type.numeric.RealType;
+
+public class Quicksort< T extends RealType< T > >
 {
-	Img<FloatType> image;
-	ArrayList< Coordinates > positionList;
-	ArrayList<Integer> indexList = null;
-	RandomAccess< FloatType > r;
-	public Quicksort(Img<FloatType> _image, ArrayList< Coordinates > _positionList) {
-		positionList = _positionList;
-		image = _image;
-		r = image.randomAccess();
-		this.indexList = new ArrayList<Integer>(positionList.size());
-		for (int i = 0; i<positionList.size() ; i++) {
-			indexList.add(i,i);
-		}
+	final RandomAccessible< T > image;
+	final ArrayList< Point > positionList;
+	//final ArrayList<Integer> indexList;
+	final int[] indexList;
+	final RandomAccess< T > r;
+	final int n;
+
+	public Quicksort( final RandomAccessible< T > image, final ArrayList< Point > positionList)
+	{
+		this.n = image.numDimensions();
+		this.positionList = positionList;
+		this.image = image;
+		this.r = image.randomAccess();
+		//this.indexList = new ArrayList<Integer>(positionList.size());
+		this.indexList = new int[ positionList.size() ];
+
+		for (int i = 0; i < positionList.size() ; ++i )
+			indexList[ i ] = i;;
 	}
 	
-	public ArrayList<Integer> qsort() {
+	public int[] qsort()
+	{
 		qs( 0, positionList.size() - 1);
 		return indexList;
 	}
 	
-	private void qs(int left, int right) {
+	private void qs( final int left, final int right)
+	{
 		int i, j;
-		float pivot;
-		Integer temp;
+		double pivot;
 		i = left;
 		j = right;
 
 		r.setPosition( 0, 0 );
-		pivot = accessor((left + right) / 2);
+		pivot = accessor((left + right) / 2).getRealDouble();
 		
 		do {
-			while (accessor(i) < pivot && (i < right)) { i++; }
+			while (accessor(i).getRealDouble() < pivot && (i < right)) { i++; }
 			
-			while ((pivot < accessor(j)) && (j > left)) { j--; }
+			while ((pivot < accessor(j).getRealDouble()) && (j > left)) { j--; }
 				
-			if (i <= j) {
-				temp = indexList.get(i);
-				indexList.set(i, indexList.get(j));
-				indexList.set(j, temp);
+			if (i <= j)
+			{
+				final int temp = indexList[ i ];
+				indexList[ i ] = indexList[ j ];
+				indexList[ j ] = temp;
 				i++;
 				j--;
 			}
 		}  while (i <= j);
 			
-		if (left < j) {
+		if (left < j)
 			qs (left, j);
-		}
-			
-		if (i < right) {
+
+		if (i < right)
 			qs (i, right);
-		}
-	}	
-	
-	float accessor(int i) {
-		r.setPosition(positionList.get(indexList.get(i)).y, 0);
-		r.setPosition(positionList.get(indexList.get(i)).x, 1);
-		return r.get().getRealFloat();
+	}
+
+	public T accessor( final int i )
+	{
+		r.setPosition( positionList.get( indexList[ i ] ) );
+		return r.get();
 	}
 }
