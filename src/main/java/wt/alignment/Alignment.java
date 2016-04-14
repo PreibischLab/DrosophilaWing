@@ -66,7 +66,7 @@ public class Alignment
 		// preprocess and transform in order to run the bunwarpj properly
 		final Preprocess pTemplate = new Preprocess( template );
 		
-		// compute a big Gauss and subtract it
+		// compute a tophat filter (previously a big Gauss and subtract it)
 		pTemplate.homogenize();
 		// TODO: Fourier filter
 		// extend the image by 20%, use the simple method - and rembember the offset (how much we extended)
@@ -75,7 +75,7 @@ public class Alignment
 		// preprocess and transform in order to run the bunwarpj properly
 		final Preprocess pWing = new Preprocess( wing );
 		
-		// compute a big Gauss and subtract it
+		// compute a tophat filter (previously a big Gauss and subtract it)
 		pWing.homogenize();
 		
 		// extend the image by 20%, use the simple method
