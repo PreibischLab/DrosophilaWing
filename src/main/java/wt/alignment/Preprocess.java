@@ -1,5 +1,8 @@
 package wt.alignment;
 import java.util.ArrayList;
+
+import ij.ImagePlus;
+import ij.ImageStack;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.NoninvertibleModelException;
 import net.imglib2.Cursor;
