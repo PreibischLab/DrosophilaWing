@@ -39,7 +39,7 @@ public class Preprocess
 	
 	public void homogenize()
 	{
-			homogenizeBothat(10);
+		homogenizeBothat(10);
 		//homogenizeGauss();
 	}
 	
