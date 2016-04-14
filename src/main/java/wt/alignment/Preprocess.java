@@ -1,5 +1,5 @@
 package wt.alignment;
-
+import java.util.ArrayList;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.NoninvertibleModelException;
 import net.imglib2.Cursor;
@@ -168,6 +168,41 @@ public class Preprocess
 
 		// compute the average border intensity
 		// strictly 2d!
+		final ArrayList< Coordinates > borderPixelList = 
+				new ArrayList< Coordinates >((int) (2*output.dimension( 0 ) + 2*output.dimension( 1 ) - 4));
+		int row=0,col=0;
+		do {
+			borderPixelList.add(new Coordinates(col,row));
+			row++;
+		} while ( row < output.dimension( 0 ) - 1 );
+
+		do {
+			col++;
+			borderPixelList.add(new Coordinates(col,row));
+		} while ( col < output.dimension( 1 ) - 1 );
+
+		do {
+			row--;
+			borderPixelList.add(new Coordinates(col,row));
+		} while ( row > 0 );
+
+		do {
+			col--;
+			borderPixelList.add(new Coordinates(col,row));
+		} while ( col > 0 );
+		
+		this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
+
+		return avgBorderValue1;
+	}
+	
+	protected double borderAverage()
+	{
+		if ( !Double.isNaN( this.avgBorderValue1 ) )
+			return this.avgBorderValue1;
+
+		// compute the average border intensity
+		// strictly 2d!
 		final RandomAccess< FloatType > r = output.randomAccess();
 
 		r.setPosition( 0, 0 );
@@ -208,7 +243,7 @@ public class Preprocess
 
 		return avgBorderValue1;
 	}
-
+	
 	public double avgImage( final Img< FloatType > img )
 	{
 		RealSum sum = new RealSum();
@@ -218,4 +253,5 @@ public class Preprocess
 
 		return sum.getSum() / (double)img.size();
 	}
+
 }
