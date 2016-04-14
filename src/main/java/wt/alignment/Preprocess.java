@@ -1,5 +1,7 @@
 package wt.alignment;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -17,6 +19,7 @@ import net.imglib2.img.Img;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.RealSum;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import net.imglib2.algorithm.stats.ComputeMinMax;
 
@@ -261,7 +264,32 @@ public class Preprocess
 		} while ( col > 0 );
 		
 		this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
+		
+		Collections.sort( borderPixelList, new PointComparator< FloatType >( output ) );
 
+		RandomAccess< FloatType  > r = output.randomAccess();
+
+		float med = 0;
+		
+		if (borderPixelList.size() % 2 == 1)
+		{
+			r.setPosition( borderPixelList.get( borderPixelList.size() / 2 ) );
+			med = r.get().getRealFloat();
+		}
+		else {
+			int i = (borderPixelList.size() / 2);
+
+			r.setPosition( borderPixelList.get( i ) );
+			med += r.get().getRealFloat();
+
+			r.setPosition( borderPixelList.get( i-1 ) );
+			med += r.get().getRealFloat();
+
+			med /= 2.0;
+		}
+		System.out.println( "median2: " + med );
+		
+		this.avgBorderValue1 = med;
 		// median : 245.23547
 		// median : 249.18938
 		

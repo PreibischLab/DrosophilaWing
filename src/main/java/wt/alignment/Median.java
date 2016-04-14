@@ -18,14 +18,14 @@ public class Median
 		
 		final T med;
 		
-		if (indexList.size() % 2 == 0)
+		if (indexList.size() % 2 == 1)
 		{
 			med = qSortTmp.accessor(sortedIndex[ indexList.size() / 2 ]).copy();
 		}
 		else {
-			int i = (int) Math.ceil((double)(indexList.size()) / 2);
-			med = qSortTmp.accessor(sortedIndex[ indexList.size() / 2 ]).copy();
-			med.setReal( ( med.getRealDouble() + qSortTmp.accessor(sortedIndex[i+1]).getRealDouble() ) / 2.0 );
+			int i = (indexList.size() / 2);
+			med = qSortTmp.accessor(sortedIndex[ i ]).copy();
+			med.setReal( ( med.getRealDouble() + qSortTmp.accessor(sortedIndex[i-1]).getRealDouble() ) / 2.0 );
 			
 		}
 		System.out.println( "median : " + med );
