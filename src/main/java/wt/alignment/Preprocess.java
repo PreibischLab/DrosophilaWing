@@ -114,7 +114,7 @@ public class Preprocess
 			final float in = c1.next().get();
 			final float out = c2.next().get();
 
-			c2.get().set( in / out );
+			c2.get().set( in / out ); // TODO: is the divide operation normal ? it is said minus elsewhere
 		}
 	}
 
@@ -173,7 +173,7 @@ public class Preprocess
 	
 			try
 			{
-				Gauss3.gauss( 10, Views.extendValue( outExtended, avg ), outExtended );
+				Gauss3.gauss( 10, Views.extendValue( outExtended, avg ), outExtended ); //TODO : why a gaussian here ?
 			}
 			catch (IncompatibleTypeException e) {}
 	
