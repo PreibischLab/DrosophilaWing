@@ -6,12 +6,15 @@ import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.algorithm.gauss3.Gauss3;
+import net.imglib2.algorithm.morphology.BlackTopHat;
+import net.imglib2.algorithm.neighborhood.HyperSphereShape;
 import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.img.Img;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.RealSum;
 import net.imglib2.view.Views;
+import net.imglib2.algorithm.stats.ComputeMinMax;
 
 public class Preprocess
 {
@@ -30,8 +33,70 @@ public class Preprocess
 
 	public Img< FloatType > input()  { return input; }
 	public Img< FloatType > output() { return output; }
-
+	
 	public void homogenize()
+	{
+			homogenizeBothat(10);
+		//homogenizeGauss();
+	}
+	
+	public void homogenizeBothat(long radius)
+	{
+		// this.output = input.factory().create( input, input.firstElement() );
+		HyperSphereShape strel = new HyperSphereShape(radius);
+		this.output = BlackTopHat.blackTopHat(input, strel, Runtime.getRuntime().availableProcessors());
+		
+		Img< FloatType >  tmpGauss = output.factory().create( output, output.firstElement() );
+		
+		try {
+			Gauss3.gauss( 8, Views.extendBorder( this.output ), tmpGauss);
+		} catch (IncompatibleTypeException e) {}
+		
+		final Cursor< FloatType > c1 = output.cursor();
+		final Cursor< FloatType > c2 = tmpGauss.cursor();
+		while ( c1.hasNext() ) {
+			final float bhat = c1.next().get();
+			final float gau = c2.next().get();
+			c1.get().setReal( gau + bhat);
+		}
+		
+		// Compute min and max
+		FloatType min = new FloatType();
+		FloatType max = new FloatType();
+		final ComputeMinMax<FloatType> cmm = new ComputeMinMax<FloatType>(output, min, max);
+		if (!cmm.checkInput() || !cmm.process()) {
+			try {
+				throw new Exception("Coult not compute min and max: " + cmm.getErrorMessage());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		// If min and max are the same, we just return the empty image will all zeros
+		if (0 == cmm.getMin().compareTo(cmm.getMax())) {
+			
+		}
+		min = cmm.getMin();
+		max = cmm.getMax();
+
+		FloatType diff = new FloatType();
+		diff.set(max.get()-min.get());
+		// Normalize in place the target image
+		final Cursor< FloatType > c = output.cursor();
+		while ( c.hasNext() ) {
+			final float in = c.next().get();
+			c.get().setReal(255 * (max.get() - in) / diff.get() );
+		}
+		
+		// display image
+		/*
+		final ImageStack stack = new ImageStack( (int)output.dimension( 0 ), (int)output.dimension( 1 ) );
+		stack.addSlice( ImageTools.wrap( output ) );
+		new ImagePlus( "blackTopHat", stack ).show();
+		*/
+	}
+	
+	public void homogenizeGauss()
 	{
 		this.output = input.factory().create( input, input.firstElement() );
 
