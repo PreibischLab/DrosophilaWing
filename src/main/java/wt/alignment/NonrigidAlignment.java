@@ -116,6 +116,11 @@ public class NonrigidAlignment
 		return transformed;
 	}
 
+	public static float between0and255( final double value )
+	{
+		return (float)Math.min( 255, Math.max( 0, value ) );
+	}
+
 	public static String adjustImageIntensities(
 			final Img< FloatType > target,
 			final Img< FloatType > source,
@@ -129,18 +134,62 @@ public class NonrigidAlignment
 				"Source: extend value " + sourceOutOfBoundsValue + ", minmax=" + Util.printCoordinates( minMaxSource ) + "\n" +
 				"Target: extend value " + targetOutOfBoundsValue + ", minmax=" + Util.printCoordinates( minMaxTarget ) + "\n";
 
+		// we must map to 8bit for bUnwarpJ, to be stable the background (oobs) needs the same intensity
+		// now we map so that min1==min2=0, max1==max2=255, oob1==avg(oobs1,oobs2)=oobs2
+		final double z1 = minMaxTarget[ 0 ]; // min1
+		final double z2 = targetOutOfBoundsValue; // oobs1
+		final double z3 = minMaxTarget[ 1 ]; // max1
+
+		final double x1 = minMaxSource[ 0 ]; // min2
+		final double x2 = sourceOutOfBoundsValue; // oobs2
+		final double x3 = minMaxSource[ 1 ]; // max2
+
+		final double oobs = ( x2 + z2 ) / 2.0;
+
+		for ( final FloatType t : target )
+		{
+			final float value = t.get();
+
+			if ( value <= z2 && ( z2 - z1 > 0 ) )
+			{
+				// z1 == 0
+				// z2 == oobs
+
+				t.set( between0and255( ((value - z1) / ( z2 - z1 )) * oobs ) );
+			}
+			else
+			{
+				// z2 == oobs
+				// z3 == 255
+
+				t.set( between0and255( ((value - z2) / ( z3 - z2 )) * ( 255.0 - oobs ) + oobs ) );
+			}
+		}
+		
+		for ( final FloatType t : source )
+		{
+			final float value = t.get();
+
+			if ( value <= x2 && ( x2 - x1 > 0 ) )
+			{
+				// x1 == 0
+				// x2 == oobs
+
+				t.set( between0and255( ((value - x1) / ( x2 - x1 )) * oobs ) );
+			}
+			else
+			{
+				// x2 == oobs
+				// x3 == 255
+
+				t.set( between0and255( ((value - x2) / ( x3 - x2 )) * ( 255.0 - oobs ) + oobs ) );
+			}
+		}
+/*
 		// linear mapping target from [min2,oobs2,max2] to [0,f(oobs2),255]
 		// f(z) = a2*z + n2
 		// quadratic mapping source from [min1,oobs1,max1] to [0,g(oobs1)=f(oobs2),255]
 		// g(x) = a1*x*x + b1*x + c1
-		final double z1 = minMaxTarget[ 0 ];
-		final double z2 = targetOutOfBoundsValue;
-		final double z3 = minMaxTarget[ 1 ];
-
-		final double x1 = minMaxSource[ 0 ];
-		final double x2 = sourceOutOfBoundsValue;
-		final double x3 = minMaxSource[ 1 ];
-
 		final double a2 = 255.0 / ( z3 - z1 );
 		final double n2 = -a2 * z1;
 
@@ -152,8 +201,6 @@ public class NonrigidAlignment
 				( x1*x3*x3*q + x1*x1*x2*p - x1*x1*x3*q - x1*x2*x2*p );
 
 		final double c1 = ( 255.0*x1*x1 - b1*x1*x1*x3 + b1*x1*x3*x3 ) / p;
-
-		//final double c1b = ( (a2*z2+n2)*x1*x1 - b1*x1*x1*x2 + b1*x1*x2*x2 ) / q;
 
 		final double a1 = ( -b1*x1 - c1 ) / ( x1*x1 );
 		//final double a1b = ( 255.0 - b1*x3 - c1a ) / ( x3*x3 );
@@ -173,7 +220,7 @@ public class NonrigidAlignment
 
 		for ( final FloatType t : source )
 			t.set( Math.min( 255, Math.max( 0, (float)(a1*t.get()*t.get() + b1*t.get() + c1) ) ) );
-
+*/
 		return s;
 	}
 	/**
