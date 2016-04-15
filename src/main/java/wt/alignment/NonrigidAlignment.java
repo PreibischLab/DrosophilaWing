@@ -218,9 +218,9 @@ public class NonrigidAlignment
 		final ImagePlus targetImp = new ImagePlus( "Target", ImageTools.wrap( target ).convertToByteProcessor( false ) );
 		final ImagePlus sourceImp = new ImagePlus( "Source", ImageTools.wrap( source ).convertToByteProcessor( false ) );
 
-		//targetImp.show();
-		//sourceImp.show();
-		//SimpleMultiThreading.threadHaltUnClean();
+		targetImp.show();
+		sourceImp.show();
+		SimpleMultiThreading.threadHaltUnClean();
 
 		/*
 		 * targetImp - input target image

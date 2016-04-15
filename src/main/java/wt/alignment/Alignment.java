@@ -68,7 +68,7 @@ public class Alignment
 		
 		// compute a tophat filter (previously a big Gauss and subtract it)
 		pTemplate.homogenize();
-		// TODO: Fourier filter
+		
 		// extend the image by 20%, use the simple method - and rembember the offset (how much we extended)
 		this.offset = Util.getArrayFromValue( pTemplate.extend( 0.2f, true ), wing.numDimensions() );
 
@@ -88,8 +88,8 @@ public class Alignment
 		model.fit( transform1.createUpdatedMatches( this.offset ) );
 		pWing.transform( model );
 
-		//new ImagePlus( "template", ImageTools.wrap( pTemplate.output ) ).show();;
-		//new ImagePlus( "wing", ImageTools.wrap( pWing.output ) ).show();;
+		new ImagePlus( "templateAfine", ImageTools.wrap( pTemplate.output ) ).show();
+		new ImagePlus( "wingAfine", ImageTools.wrap( pWing.output ) ).show();
 		//SimpleMultiThreading.threadHaltUnClean();
 
 		// compute non-rigid alignment (and before that adjust the image intensities for min, outofbounds, max and how they are mapped to 8 bit)
@@ -198,8 +198,8 @@ class AlignmentProcess
 	{
 		// PROCESS ONE FILE (contains two slices brightfield & fluorescence) in the data directory "data/wings" (relative)
 		setPairsDir(new File( "data/wings" ));
-		setTemplate(new File( "data/wings/wing_template_A13_2014_01_31.tif" ));// what to register it to
-		addToPair("909_dsRed_001.tif");
+		setTemplate(new File( "data/wings/tempalte2.tif" ));// what to register it to
+		addToPair("test2.tif");
  		run();
 	}
 	
@@ -235,11 +235,13 @@ class AlignmentProcess
 			final File wingSavedFile = new File( dirRegistered, wingFile.getName() + ".aligned.zip" );
 			final File wingSavedLog  = new File( dirRegistered, wingFile.getName() + ".aligned.txt" );
 			
+			/*
 			if ( wingSavedFile.exists() && wingSavedLog.exists() )
 			{
 				System.out.println( wingFile.getAbsolutePath() + " already processed, ignoring. If you want to reprocess, delete " + wingSavedFile.getAbsoluteFile() + " to override." );
 				continue;
 			}
+			*/
 			
 			// this one figures out if it is two slices, or find the corresponding file 
 			// it see which one is brighter and sort it accordingly
@@ -255,7 +257,7 @@ class AlignmentProcess
 			// this is the main alignment work done here
 			final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight );
 	
-			// saves ?? to hard drive TODO
+			// TODO saves ?? to hard drive 
 			final ImagePlus aligned = alignment.getAlignedImage();
 			if ( aligned != null )
 			{
