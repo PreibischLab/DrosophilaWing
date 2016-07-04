@@ -93,8 +93,10 @@ public class Alignment
 		model.fit( transform1.createUpdatedMatches( this.offset ) );
 		pWing.transform( model );
 
+		/*
 		new ImagePlus( "templateAfine", ImageTools.wrap( pTemplate.output ) ).show();
 		new ImagePlus( "wingAfine", ImageTools.wrap( pWing.output ) ).show();
+		*/
 		//SimpleMultiThreading.threadHaltUnClean();
 
 		// compute non-rigid alignment (and before that adjust the image intensities for min, outofbounds, max and how they are mapped to 8 bit)
