@@ -299,8 +299,10 @@ class AlignmentProcess
 			}
 			else
 			{
+				/*
 				stackBrightfield.addSlice( wingFile.getName(), wing );
 				stackGene.addSlice( wingFile.getName(), wingGene );
+				*/
 			}
 			i++;
 		}
