@@ -224,7 +224,7 @@ class AlignmentProcess
 		
 		
 		
-		final ImagePlus templateImp = new ImagePlus( templateFile.getPath() );
+		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
 		
 		final ImageStack stackGene        = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 		final ImageStack stackBrightfield = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
