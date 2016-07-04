@@ -28,14 +28,26 @@ import bunwarpj.Transformation;
 
 public class Alignment
 {
-	protected final InitialTransform transform1;
-	protected final NonrigidAlignment nra;
+	protected InitialTransform transform1 = null;
+	protected NonrigidAlignment nra = null;
 	protected ImagePlus aligned = null;
 	protected boolean mirror;
 	protected long[] offset;
 	protected AbstractAffineModel2D< ? > model;
 	protected Transformation t;
 	protected int subsampling;
+	protected File DirectoryDebugSave = null;
+	protected String counter = null;
+			
+
+	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene, final double imageWeight, final File DirectoryDebugSave, String counter) 
+			throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	{
+		this.counter = counter;
+		this.DirectoryDebugSave = DirectoryDebugSave;
+		run(template, wing, wingGene, imageWeight);
+		
+	}
 
 	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene, final double imageWeight ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
@@ -97,6 +109,14 @@ public class Alignment
 		new ImagePlus( "templateAfine", ImageTools.wrap( pTemplate.output ) ).show();
 		new ImagePlus( "wingAfine", ImageTools.wrap( pWing.output ) ).show();
 		*/
+		if (DirectoryDebugSave != null)
+		{
+			File tmp = new File( DirectoryDebugSave, "template_affine.tif"     );
+			if (!tmp.exists())
+				new FileSaver( new ImagePlus( "template_affine"       , ImageTools.wrap( pTemplate.output ) ) ).saveAsTiff( new File( DirectoryDebugSave, "template_affine.tif"     ).getAbsolutePath() );
+			new FileSaver( new ImagePlus( "brightfield_affine"    , ImageTools.wrap( pWing.output     ) ) ).saveAsTiff( new File( DirectoryDebugSave, "brightfield_affine"+counter+".tif"  ).getAbsolutePath() );
+			return;
+		}
 		//SimpleMultiThreading.threadHaltUnClean();
 
 		// compute non-rigid alignment (and before that adjust the image intensities for min, outofbounds, max and how they are mapped to 8 bit)
