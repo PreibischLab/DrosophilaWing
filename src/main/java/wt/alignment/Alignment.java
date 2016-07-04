@@ -39,6 +39,11 @@ public class Alignment
 
 	public Alignment( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene, final double imageWeight ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
+		run(template, wing, wingGene, imageWeight);
+	}
+	
+	protected void run( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene, final double imageWeight) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	{
 		// find the initial alignment using SIFT feature matching (and if it is mirrored)
 		this.transform1 = new InitialTransform( template, wing );
 
