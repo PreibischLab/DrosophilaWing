@@ -250,7 +250,7 @@ class AlignmentProcess
 		
 		final ImageStack stackGene        = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 		final ImageStack stackBrightfield = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
-		
+		int i=0;
 		for ( final Pair< String, String > pair : pairs )
 		{
 			final File wingFile;
@@ -282,7 +282,10 @@ class AlignmentProcess
 	
 			
 			// this is the main alignment work done here
-			final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight );
+			//final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight );
+
+			// stop to affine and save images to disk
+			final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight, dirRegistered, String.format("%05d", i) );
 	
 			// TODO saves ?? to hard drive 
 			final ImagePlus aligned = alignment.getAlignedImage();
@@ -299,6 +302,7 @@ class AlignmentProcess
 				stackBrightfield.addSlice( wingFile.getName(), wing );
 				stackGene.addSlice( wingFile.getName(), wingGene );
 			}
+			i++;
 		}
 		
 		if ( showSummary && stackGene.getSize() > 0 && stackBrightfield.getSize() > 0  )
