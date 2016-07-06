@@ -26,7 +26,7 @@ public class Quicksort< T extends RealType< T > >
 		this.indexList = new int[ positionList.size() ];
 
 		for (int i = 0; i < positionList.size() ; ++i )
-			indexList[ i ] = i;;
+			indexList[ i ] = i;
 	}
 	
 	public int[] qsort()
