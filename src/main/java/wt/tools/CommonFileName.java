@@ -175,7 +175,7 @@ public class CommonFileName
 							partnerFile.getID().equals(file.getID()) &&
 							!partnerFile.getType().equals(file.getType()) )
 							
-						{
+						{//TODO: check for brightfield type and invert if needed 
 							System.out.println("      paired!");
 							if (pair == null) {
 								selectedPartner = partnerFile;
