@@ -169,8 +169,6 @@ public class CommonFileName
 					// look for a partner in the list
 					for ( final fileHandler partnerFile : files )
 					{
-						if (pair == null)
-							System.out.println("   against:" + partnerFile.getFullName());
 						if ( // condition to be a partner
 							partnerFile.getID().equals(file.getID()) &&
 							!partnerFile.getType().equals(file.getType()) )
