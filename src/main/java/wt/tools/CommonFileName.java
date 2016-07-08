@@ -32,7 +32,7 @@ public class CommonFileName
 	{
 		try
 		{
-			final ZipFile zf = new ZipFile( file );
+			final ZipFile zf = new ZipFile( file );// WARNING: resource leak, zf is never closed
 			final Enumeration< ? extends ZipEntry > entries = zf.entries();
 
 			while ( entries.hasMoreElements() )
@@ -63,7 +63,7 @@ public class CommonFileName
 		try
 		{
 			final ArrayList< ZipEntry > list = new ArrayList< ZipEntry >();
-			final ZipFile zf = new ZipFile( file );
+			final ZipFile zf = new ZipFile( file ); // WARNING: resource leak, zf is never closed
 			final Enumeration< ? extends ZipEntry > entries = zf.entries();
 
 			while ( entries.hasMoreElements() )
