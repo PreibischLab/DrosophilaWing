@@ -122,7 +122,7 @@ public class CommonFileName
 	{
 		if ( dir == null || !dir.exists() )
 		{
-			IJ.log( "Provided path '" + dir.getAbsolutePath() + "'is does not exist." );
+			IJ.log( "Provided path '" + dir.getAbsolutePath() + "'does not exist." );
 			return null;
 		}
 
