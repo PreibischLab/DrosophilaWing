@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -118,8 +119,10 @@ public class CommonFileName
 		return list;
 	}
 
-	public static List< Pair< String, String > > pairedImages( final File dir )
+	public static List< Pair< File, File > > pairedImages( final File dir )
 	{
+		String ext = ".tif";
+			
 		if ( dir == null || !dir.exists() )
 		{
 			IJ.log( "Provided path '" + dir.getAbsolutePath() + "'does not exist." );
@@ -132,48 +135,172 @@ public class CommonFileName
 			return null;
 		}
 
-		final HashSet< String > files = new HashSet< String >();
+		final ArrayList< fileHandler > files     = new ArrayList< fileHandler >();
+		final ArrayList< fileHandler > filesFull = new ArrayList< fileHandler >();
 		final String[] fileList = dir.list();
-
+		Arrays.sort(fileList);
+		
+		// filter files 
 		for ( final String f : fileList )
-			files.add( f );
-
-		final List< Pair< String, String > > pairs = new ArrayList< Pair< String, String > >();
-
-		for ( final String file : fileList )
+		{
+			if (f.toLowerCase().endsWith( ext ))
+			{
+				fileHandler tmp = new fileHandler(f);
+				files.add( tmp);
+				filesFull.add(tmp);
+			}
+		}
+		final List< Pair< File, File > > pairs = new ArrayList< Pair< File, File > >();
+		fileHandler selectedPartner = null;
+		for ( final fileHandler file : filesFull )
 		{
 			// not removed as checked or partner yet
 			if ( files.contains( file ) )
 			{
-				files.remove( file );
+				
+				Pair< File, File > pair = null;
+				if (file.getType().equals("brightfield") || file.getType().equals("")) 
+				{ // if no type (or explicit "brightfield" type) -> take as reference
+					
+					// remove the file because we will know if it has a partner or not
+					files.remove( file ); 
 
-				if ( file.toLowerCase().endsWith( ".tif" ) )
-				{
-					final String start = file.toLowerCase().substring( 0, file.indexOf( ".tif" ) );
-
-					Pair< String, String > pair = null;
-
-					for ( final String partnerFile : files )
+					System.out.println("file tested:" + file.getFullName());
+					// look for a partner in the list
+					for ( final fileHandler partnerFile : files )
 					{
-						if (
-							partnerFile.toLowerCase().startsWith( start ) &&
-							partnerFile.toLowerCase().endsWith( ".tif" ) &&
-							partnerFile.charAt( start.length() ) == '_' )
+						if (pair == null)
+							System.out.println("   against:" + partnerFile.getFullName());
+						if ( // condition to be a partner
+							partnerFile.getID().equals(file.getID()) &&
+							!partnerFile.getType().equals(file.getType()) )
+							
 						{
-							pair = new ValuePair< String, String >( file, partnerFile );
-							break;
+							System.out.println("      paired!");
+							if (pair == null) {
+								selectedPartner = partnerFile;
+								pair = new ValuePair< File, File >( new File(dir.getPath(),        file.getFullName()),
+																    new File(dir.getPath(), partnerFile.getFullName()) );
+							}
+							else
+								System.out.println( "Be carefull, " + partnerFile.getFullName() +
+													" could also be paired width "+ pair.getA() +
+													"(chosen match:" + pair.getB() + ")");
 						}
 					}
-
+	
+					// if a pair is found, remove the partner from the list
 					if ( pair != null )
 					{
 						pairs.add( pair );
-						files.remove( pair.getB() );
+						files.remove( selectedPartner );
 					}
+					System.out.println("size:" + files.size());
+					
 				}
 			}
 		}
-
+		for (final fileHandler file : files) {
+			System.out.println( "no pair found for " + file.getFullName() );
+		}
 		return pairs;
 	}
+	
+	public static class fileHandler
+	{
+		private String idSeparator = "_";
+		private String name = null;
+		private String fullName = null;
+		private String ext = "";
+		private String id = null;
+		private String type = "";
+		
+		public fileHandler(String file)
+		{
+			fullName = file;
+			
+			// finds name
+			int i = file.lastIndexOf('.');
+			if (i > 0) {
+			    ext = file.substring(i+1);
+			    name = fullName.substring( 0, i );
+			}
+			else
+			{
+				name = fullName;
+			}
+			
+			// find ID ( after the last idSeparator in the name)
+			i = name.lastIndexOf(idSeparator);
+			if (i > 0)
+			{
+				id = name.substring( 0, i ).toLowerCase();
+				type = name.substring(i+1);
+			}
+			else
+				id = name.toLowerCase();
+			
+		}
+		
+		public final String getName() {return name;}
+		public final String getFullName() {return fullName;}
+		public final String getExt() {return ext;}
+		public final String getID() {return id;}
+		public final String getType() {return type;}
+
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass()) 
+				return false;
+			
+			fileHandler other = (fileHandler) obj;
+			if (fullName == null) {
+				if (other.fullName != null)
+					return false;
+			} else if (!fullName.equals(other.fullName))
+				return false;
+			return true;
+		}
+
+		
+		
+		
+	}
+	
+	
+
+	
+	public static String IDFromPair(String file1, String file2)
+	{
+		int k=0;
+		if (file2.isEmpty())
+			k = file1.length();
+		else
+		{
+			while (k<file1.length() && k<file2.length())
+			{
+				if (file1.charAt(k) != file2.charAt(k))
+					break;
+				k++;
+			}
+			while (k>0)
+			{
+				if (file1.charAt(k-1) != '_')
+					break;
+				k--;
+			}
+		}
+		return file1.substring(0, k);
+	}
+	
+	public static String IDFromPair(File file1, File file2)
+	{
+		return IDFromPair(file1.getName(), file2.getName());
+	}
+	
 }

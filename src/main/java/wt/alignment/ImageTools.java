@@ -14,82 +14,84 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Pair;
 import net.imglib2.util.RealSum;
+import net.imglib2.util.ValuePair;
 
 public class ImageTools
-{
-	public static ImagePlus loadImage( final File filepart )
+{	
+	static public class loadImage
 	{
-		if ( filepart.exists() )
+		private boolean isSwitched = false;
+		private ImagePlus overlay = null;
+		private Pair< File, File > file;
+		private String bfName = null;
+		private String geName = null;
+		 
+		ImagePlus          getImage()           {return overlay;}
+		Pair< File, File > getPair()            {return file;}
+		boolean            getSwitched()        {return isSwitched;}
+		String             getBrightFieldName() {return bfName; }
+		String             getGeneName()        {return geName; }
+		
+		public loadImage( final Pair< File, File > _file )
 		{
-			System.out.println( "Opening: " + filepart.getAbsolutePath() );
-
-			final ImagePlus imp = new ImagePlus( filepart.getAbsolutePath() );
+			file = _file;
+			bfName = file.getA().getName();
+			if (file.getB() == null || file.getB().isDirectory())
+			{
+				File filepart = file.getA();
+				System.out.println( "Opening: " + filepart.getAbsolutePath() );
 	
-			if ( imp.getStack().getSize() != 2 )
-			{
-				System.out.println( "Image '" + filepart.getAbsolutePath() + "' does not have two slices. Stopping." );
-				return null;
-			}
-
-			return imp;
-		}
-		else
-		{
-			File dir = new File( filepart.getParent() );
-			String fileStart = filepart.getName();
-
-			if ( !dir.exists() )
-			{
-				System.out.println( "Dir '" + dir.getAbsolutePath() + "' does not exist. Stopping." );
-				return null;
-			}
-
-			if ( !dir.isDirectory() )
-			{
-				System.out.println( "Dir '" + dir.getAbsolutePath() + "' is not a directory. Stopping." );
-				return null;
-			}
-
-			final String[] files = dir.list();
-			final ArrayList< File > images = new ArrayList< File >();
-
-			for ( final String f : files )
-			{
-				if ( f.startsWith( fileStart ) && !f.endsWith( ".txt") && !f.endsWith( ".zip" ) )
+				final ImagePlus imp = new ImagePlus( filepart.getAbsolutePath() );
+	
+				if ( imp.getStack().getSize() != 2 )
 				{
-					final File imgFile = new File( dir, f );
-
-					if ( imgFile.exists() )
-						images.add( imgFile );
+					System.out.println( "Image '" + filepart.getAbsolutePath() + "' is expected to have two slices. Stopping." );
+					return;
 				}
+				geName = file.getA().getName();
+				overlay = imp; //TODO: use the sort function
 			}
-
-			System.out.println( "Files found: " );
-
-			for ( final File imgFile : images )
-				System.out.println( imgFile );
-
-			if ( images.size() != 2 )
+			else
 			{
-				System.out.println( "These are not two files (one brighfield, one gene expression). Stopping." );
-				return null;
+				if (!file.getA().exists() || !file.getB().exists() ){
+					System.out.println( "Image file could not be read. Stopping." );
+					return;
+				}
+		
+				System.out.println( "Opening: " + file.getA().getAbsolutePath() );
+				System.out.println( "         " + file.getB().getAbsolutePath() );
+				final Img< FloatType > img1 = convert( new ImagePlus( file.getA().getAbsolutePath() ), 0 );
+				final Img< FloatType > img2 = convert( new ImagePlus( file.getB().getAbsolutePath() ), 0 );
+				
+				geName = file.getB().getName();
+				overlay = sortBrightFieldFirst(img1, img2);
 			}
-
-			final Img< FloatType > img1 = convert( new ImagePlus( images.get( 0 ).getAbsolutePath() ), 0 );
-			final Img< FloatType > img2 = convert( new ImagePlus( images.get( 1 ).getAbsolutePath() ), 0 );
-
+		}
+		
+		private ImagePlus sortBrightFieldFirst(Img< FloatType > img1, Img< FloatType > img2)
+		{
 			final double avg1 = avg( img1 );
 			final double avg2 = avg( img2 );
 
 			// the brighter one first
 			if ( avg1 > avg2 )
 				return overlay( img1, img2 );
-			else
+			else 
+			{
+				System.out.println( "Brightfield and expression image seems to be switched. Correcting." );
+				Pair< File, File > pair = new ValuePair< File, File >(file.getB(), file.getA() );
+				file = pair;
+				isSwitched = true;
 				return overlay( img2, img1 );
+			}
 		}
 	}
+	
 
+	
+	
 	public static final double avg( final Img< FloatType > img )
 	{
 		final RealSum sum = new RealSum();

@@ -175,6 +175,7 @@ class AlignmentProcess
 	protected File dirRegistered  = null;
 	protected File dirPairs      = null;
 	protected List< Pair< String, String > > pairs = null;
+	protected List< Pair< File, File > > filePairs = null;
 	protected double imageWeight  = 0.5;
 	protected boolean showSummary = true;
 	protected boolean saveSummary = true;
@@ -185,13 +186,13 @@ class AlignmentProcess
 	AlignmentProcess setShowSummary(boolean _showSummary  )	{ showSummary  = _showSummary;	return this;}
 	AlignmentProcess setSaveSummary(boolean _saveSummary  )	{ saveSummary  = _saveSummary;	return this;}
 	
-	AlignmentProcess setPairs(List< Pair< String, String > > _pairs ) { pairs = _pairs; return this;}
-	AlignmentProcess setPairsDir(File _dirPairs ) { dirPairs = _dirPairs; return this;}
+	protected AlignmentProcess setPairs(List< Pair< String, String > > _pairs ) { pairs = _pairs; return this;}
+	protected AlignmentProcess setPairsDir(File _dirPairs ) { dirPairs = _dirPairs; return this;}
 	AlignmentProcess setPairs(File _dirPairs, List< Pair< String, String > > _pairs ) {
 		setPairsDir(_dirPairs).setPairs(_pairs);
 		return this;
 	}
-	
+	AlignmentProcess setFilePairs(List< Pair< File, File > > _pairs ) {filePairs = _pairs; return this;}
 	AlignmentProcess addToPair(String _brightfieldName, String _fluorescenceName){
 		if (pairs == null)
 			pairs = new ArrayList< Pair< String, String > >();
@@ -207,6 +208,26 @@ class AlignmentProcess
 	 * creates a directory for registered files ( current directory added with "registered"
 	 * 
 	 */
+	protected void filePairsFromPairs()
+	{
+		if (filePairs != null)
+			filePairs = null;
+		if (pairs == null)
+			return;
+		if (dirPairs == null)
+			return;
+		filePairs = new ArrayList< Pair< File, File > >();;
+		for (Pair< String, String > pair : pairs)
+		{
+			final File tmp;
+			if (pair.getB() != null)
+				tmp =new File(dirPairs, pair.getB());
+			else
+				tmp =new File(dirPairs, "");
+			File tmp2 = new File(dirPairs, pair.getA());
+			filePairs.add( new ValuePair< File, File >( tmp2 , tmp ));	
+		}
+	}
 	void gessRegisteredDirectory()
 	{
 		if (dirPairs.equals(new File(""))){
@@ -240,32 +261,46 @@ class AlignmentProcess
 		// check the input arguments
 		if (templateFile == null) {return;}
 		if (dirPairs     == null) {return;}
-		if (pairs        == null) {
-			setPairs(CommonFileName.pairedImages( dirPairs ));
-			for ( final Pair< String, String > pair : pairs )
-				System.out.println( pair.getA() + " <-> " + pair.getB() );
+		if (filePairs        == null) {
+			if (pairs == null)
+				setFilePairs(CommonFileName.pairedImages( dirPairs ));
+			else
+				filePairsFromPairs();	
 		}
+		
+		for ( final Pair< File, File > pair : filePairs )
+			System.out.println( pair.getA().getName() + " <-> " + 
+							    pair.getB().getName()             );
+		
 		if (dirRegistered == null){
 			gessRegisteredDirectory();
 		}
 		
 		
 		
-		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
-		
+		final ImagePlus  templateImp       = new ImagePlus( templateFile.getAbsolutePath() );
 		final ImageStack stackGeneReg        = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 		final ImageStack stackBrightfieldReg = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 		int i=0;
-		for ( final Pair< String, String > pair : pairs )
+		for ( Pair< File, File > pair : filePairs )
 		{
-			final File wingFile;
 			
-			if ( pair.getB() == null )
-				wingFile = new File(dirPairs, pair.getA() ); // already two images in one file, just use the first file
-			else
-				wingFile = new File( dirPairs, pair.getA().substring( 0, pair.getA().indexOf( ".tif" ) ) ); // two different images
-			final File wingSavedFile = new File( dirRegistered, wingFile.getName() + ".aligned.zip" );
-			final File wingSavedLog  = new File( dirRegistered, wingFile.getName() + ".aligned.txt" );
+			final String ID = CommonFileName.IDFromPair(pair.getA(), pair.getB());
+			final File wingSavedFile = new File( dirRegistered, ID + ".aligned.zip" );
+			final File wingSavedLog  = new File( dirRegistered, ID + ".aligned.txt" );
+			
+
+			// this one figures out if it is two slices, or find the corresponding file 
+			// it see which one is brighter and sort it accordingly
+			final ImagePlus wingOverlayImp;
+			ImageTools.loadImage loader = new ImageTools.loadImage(pair);
+			
+			wingOverlayImp = loader.getImage();
+			if ( wingOverlayImp == null )
+				throw new RuntimeException();
+			
+			pair = loader.getPair();
+			
 			
 			/*
 			if ( wingSavedFile.exists() && wingSavedLog.exists() )
@@ -275,29 +310,23 @@ class AlignmentProcess
 			}
 			*/
 			
-			// this one figures out if it is two slices, or find the corresponding file 
-			// it see which one is brighter and sort it accordingly
-			final ImagePlus wingImp = ImageTools.loadImage( wingFile );
-			if ( wingImp == null )
-				throw new RuntimeException();
 			
 			final Img< FloatType > template = ImageTools.convert( templateImp, 0 );
-			final Img< FloatType > wing     = ImageTools.convert( wingImp, 0 );
-			final Img< FloatType > wingGene = ImageTools.convert( wingImp, 1 );
+			final Img< FloatType > wing     = ImageTools.convert( wingOverlayImp, 0 );
+			final Img< FloatType > wingGene = ImageTools.convert( wingOverlayImp, 1 );
 	
 			
 			// this is the main alignment work done here
-			//final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight );
-
+			final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight );
 			// stop to affine and save images to disk
-			final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight, dirRegistered, String.format("%05d", i) );
+			//final Alignment alignment = new Alignment( template, wing, wingGene, imageWeight, dirRegistered, String.format("%05d", i) );
 	
 			// TODO saves ?? to hard drive 
 			final ImagePlus aligned = alignment.getAlignedImage();
 			if ( aligned != null )
 			{
-				stackBrightfieldReg.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
-				stackGeneReg.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 3 ) );
+				stackBrightfieldReg.addSlice( loader.getBrightFieldName(), aligned.getStack().getProcessor( 2 ) );
+				stackGeneReg.addSlice(        loader.getGeneName()       , aligned.getStack().getProcessor( 3 ) );
 				new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
 	
 				alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
