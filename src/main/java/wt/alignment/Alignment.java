@@ -100,6 +100,7 @@ public class Alignment
 		
 		// extend the image by 20%, use the simple method
 		pWing.extend( 0.2f, true );
+		IJ.log( "Extends wing" );
 
 		// transform pWing using the affine model from the initial transform
 		final AffineModel2D model = new AffineModel2D();
@@ -125,10 +126,13 @@ public class Alignment
 		//SimpleMultiThreading.threadHaltUnClean();
 
 		// compute non-rigid alignment (and before that adjust the image intensities for min, outofbounds, max and how they are mapped to 8 bit)
+		IJ.log( "compute non-rigid alignment" );
+
 		this.subsampling = 2;
 		this.t = nra.align( pWing.output, pTemplate.output, pWing.border(), pTemplate.border(), this.subsampling, imageWeight );
 
 		// transform the original images
+		IJ.log( "Transform original images" );
 		final Img< FloatType > wingAligned = nra.transformAll( wing, this.model, this.offset, this.t, this.subsampling );
 		final Img< FloatType > wingGeneAligned = nra.transformAll( wingGene, this.model, this.offset, this.t, this.subsampling );
 
