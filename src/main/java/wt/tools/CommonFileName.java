@@ -173,12 +173,41 @@ public class CommonFileName
 							partnerFile.getID().equals(file.getID()) &&
 							!partnerFile.getType().equals(file.getType()) )
 							
-						{//TODO: check for brightfield type and invert if needed 
+						{
 							System.out.println("      paired!");
 							if (pair == null) {
+								fileHandler brgtField;
+								fileHandler gene;
+								if (file.getType().equals("brightfield"))
+								{
+									if (partnerFile.getType().equals("brightfield"))
+									{
+										System.out.println( "Be carefull, " + partnerFile.getFullName() +
+															" and "+ file.getFullName() +
+															" are labeled as brightfield images. Skipping the second one.");
+										continue;
+									} 
+									else
+									{
+										brgtField = file;
+										gene = partnerFile;
+									}
+									
+								} else if (partnerFile.getType().equals("brightfield"))
+								{
+									gene = file;
+									brgtField = partnerFile;
+									
+								}
+								else
+								{ // default case (not type = brightfield)
+									brgtField = file;
+									gene = partnerFile;
+								}
+									
 								selectedPartner = partnerFile;
-								pair = new ValuePair< File, File >( new File(dir.getPath(),        file.getFullName()),
-																    new File(dir.getPath(), partnerFile.getFullName()) );
+								pair = new ValuePair< File, File >( new File(dir.getPath(), brgtField.getFullName()),
+																    new File(dir.getPath(),      gene.getFullName()) );
 							}
 							else
 								System.out.println( "Be carefull, " + partnerFile.getFullName() +
