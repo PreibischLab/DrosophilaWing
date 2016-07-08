@@ -179,6 +179,7 @@ class AlignmentProcess
 	protected double imageWeight  = 0.5;
 	protected boolean showSummary = true;
 	protected boolean saveSummary = true;
+	protected boolean saveAsIndividualImages = true;
 	
 	// setters
 	AlignmentProcess setTemplate(   File    _templateFile )	{ templateFile = _templateFile; return this;}
@@ -349,15 +350,39 @@ class AlignmentProcess
 		
 		if ( saveSummary && stackGeneReg.getSize() > 0 && stackBrightfieldReg.getSize() > 0 )
 		{
-			if ( stackGeneReg.getSize() == 1 )
+			if (saveAsIndividualImages)
 			{
-				new FileSaver( new ImagePlus( "all_gene"       , stackGeneReg        ) ).saveAsTiff( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
-				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfieldReg ) ).saveAsTiff( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
+				for (i=1;i<stackGeneReg.getSize();i++) 
+				{
+					CommonFileName.fileHandler fTmp = new CommonFileName.fileHandler(stackGeneReg.getSliceLabel(i));
+					File fb = new File( dirRegistered, fTmp.getName() + ".reg." + fTmp.getExt());
+					new FileSaver( new ImagePlus( stackGeneReg.getSliceLabel(i), stackGeneReg.getProcessor(i)) )
+								.saveAsTiff(fb.getAbsolutePath());
+					
+					fTmp = new CommonFileName.fileHandler(stackBrightfieldReg.getSliceLabel(i));
+					fb   = new File( dirRegistered, fTmp.getName() + ".reg." + fTmp.getExt());
+					new FileSaver( new ImagePlus( stackBrightfieldReg.getSliceLabel(i), stackBrightfieldReg.getProcessor(i)) )
+								.saveAsTiff(fb.getAbsolutePath());
+				}
 			}
 			else
 			{
-				new FileSaver( new ImagePlus( "all_gene"       , stackGeneReg        ) ).saveAsTiffStack( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
-				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfieldReg ) ).saveAsTiffStack( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
+				if ( stackGeneReg.getSize() == 1 )
+				{
+					new FileSaver( new ImagePlus( "all_gene"       , stackGeneReg        ) )
+							.saveAsTiff( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
+					
+					new FileSaver( new ImagePlus( "all_brightfield", stackBrightfieldReg ) )
+							.saveAsTiff( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
+				}
+				else
+				{
+					new FileSaver( new ImagePlus( "all_gene"       , stackGeneReg        ) )
+							.saveAsTiffStack( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
+					
+					new FileSaver( new ImagePlus( "all_brightfield", stackBrightfieldReg ) )
+							.saveAsTiffStack( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
+				}
 			}
 		}
 	}
