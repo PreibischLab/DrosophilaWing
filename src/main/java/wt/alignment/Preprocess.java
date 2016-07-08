@@ -96,9 +96,11 @@ public class Preprocess
 		}
 		
 		// display image
+		/*
 		final ImageStack stack = new ImageStack( (int)output.dimension( 0 ), (int)output.dimension( 1 ) );
 		stack.addSlice( ImageTools.wrap( output ) );
 		new ImagePlus( "blackTopHat", stack ).show();
+		*/
 		
 	}
 	
