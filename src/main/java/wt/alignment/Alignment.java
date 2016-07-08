@@ -78,6 +78,7 @@ public class Alignment
 		if ( !transform1.findInitialModel() )
 			return;
 
+		
 		// do we need to mirror it? Whichever one provided better results in the SIFT matching
 		if ( transform1.mirror() )
 		{
@@ -137,6 +138,7 @@ public class Alignment
 		final Img< FloatType > wingGeneAligned = nra.transformAll( wingGene, this.model, this.offset, this.t, this.subsampling );
 
 		this.aligned = ImageTools.overlay( template, wingAligned, wingGeneAligned );
+		
 
 		//this.aligned.show();
 		//SimpleMultiThreading.threadHaltUnClean();
@@ -242,7 +244,6 @@ class AlignmentProcess
 			dirRegistered.mkdir();
 		}
 	}
-	
 	static File gessRegisteredDirectory(final File _inputDirectory)
 	{
 		

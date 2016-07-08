@@ -71,6 +71,7 @@ public class Preprocess
 		FloatType min = new FloatType();
 		FloatType max = new FloatType();
 		final ComputeMinMax<FloatType> cmm = new ComputeMinMax<FloatType>(output, min, max);
+		
 		if (!cmm.checkInput() || !cmm.process()) {
 			try {
 				throw new Exception("Coult not compute min and max: " + cmm.getErrorMessage());
