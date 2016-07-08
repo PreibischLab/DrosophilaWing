@@ -177,7 +177,7 @@ class AlignmentProcess
 	protected List< Pair< String, String > > pairs = null;
 	protected double imageWeight  = 0.5;
 	protected boolean showSummary = true;
-	protected boolean saveSummary = false;
+	protected boolean saveSummary = true;
 	
 	// setters
 	AlignmentProcess setTemplate(   File    _templateFile )	{ templateFile = _templateFile; return this;}
