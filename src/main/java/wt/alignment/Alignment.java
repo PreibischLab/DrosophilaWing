@@ -253,8 +253,8 @@ class AlignmentProcess
 		
 		final ImagePlus templateImp = new ImagePlus( templateFile.getAbsolutePath() );
 		
-		final ImageStack stackGene        = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
-		final ImageStack stackBrightfield = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
+		final ImageStack stackGeneReg        = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
+		final ImageStack stackBrightfieldReg = new ImageStack( templateImp.getWidth(), templateImp.getHeight() );
 		int i=0;
 		for ( final Pair< String, String > pair : pairs )
 		{
@@ -296,8 +296,8 @@ class AlignmentProcess
 			final ImagePlus aligned = alignment.getAlignedImage();
 			if ( aligned != null )
 			{
-				stackBrightfield.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
-				stackGene.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 3 ) );
+				stackBrightfieldReg.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 2 ) );
+				stackGeneReg.addSlice( wingFile.getName(), aligned.getStack().getProcessor( 3 ) );
 				new FileSaver( aligned ).saveAsZip( wingSavedFile.getAbsolutePath() );
 	
 				alignment.saveTransform( "transformed image '" + wingSavedFile.getAbsolutePath() + "'", wingSavedLog );
@@ -305,30 +305,30 @@ class AlignmentProcess
 			else
 			{
 				/*
-				stackBrightfield.addSlice( wingFile.getName(), wing );
-				stackGene.addSlice( wingFile.getName(), wingGene );
+				stackBrightfieldReg.addSlice( wingFile.getName(), wing );
+				stackGeneReg.addSlice( wingFile.getName(), wingGene );
 				*/
 			}
 			i++;
 		}
 		
-		if ( showSummary && stackGene.getSize() > 0 && stackBrightfield.getSize() > 0  )
+		if ( showSummary && stackGeneReg.getSize() > 0 && stackBrightfieldReg.getSize() > 0  )
 		{
-			new ImagePlus( "all_gene", stackGene ).show();
-			new ImagePlus( "all_brightfield", stackBrightfield ).show();
+			new ImagePlus( "all_gene", stackGeneReg ).show();
+			new ImagePlus( "all_brightfield", stackBrightfieldReg ).show();
 		}
 		
-		if ( saveSummary && stackGene.getSize() > 0 && stackBrightfield.getSize() > 0 )
+		if ( saveSummary && stackGeneReg.getSize() > 0 && stackBrightfieldReg.getSize() > 0 )
 		{
-			if ( stackGene.getSize() == 1 )
+			if ( stackGeneReg.getSize() == 1 )
 			{
-				new FileSaver( new ImagePlus( "all_gene"       , stackGene        ) ).saveAsTiff( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
-				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiff( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_gene"       , stackGeneReg        ) ).saveAsTiff( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfieldReg ) ).saveAsTiff( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
 			}
 			else
 			{
-				new FileSaver( new ImagePlus( "all_gene"       , stackGene        ) ).saveAsTiffStack( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
-				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfield ) ).saveAsTiffStack( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_gene"       , stackGeneReg        ) ).saveAsTiffStack( new File( dirRegistered, "all_gene.tif"        ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "all_brightfield", stackBrightfieldReg ) ).saveAsTiffStack( new File( dirRegistered, "all_brightfield.tif" ).getAbsolutePath() );
 			}
 		}
 	}
