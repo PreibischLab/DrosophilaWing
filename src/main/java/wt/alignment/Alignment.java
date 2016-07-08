@@ -56,8 +56,20 @@ public class Alignment
 	
 	protected void run( final Img< FloatType > template, final Img< FloatType > wing, final Img< FloatType > wingGene, final double imageWeight) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
+		// preprocess and transform in order to run the bunwarpj properly
+		final Preprocess pTemplate = new Preprocess( template ); // TODO: in a loop, calculated many times
+		
+		// compute a tophat filter (previously a big Gauss and subtract it)
+		pTemplate.homogenize();
+		
+		// preprocess and transform in order to run the bunwarpj properly
+		final Preprocess pWing = new Preprocess( wing );
+		
+		// compute a tophat filter (previously a big Gauss and subtract it)
+		pWing.homogenize();
+		
 		// find the initial alignment using SIFT feature matching (and if it is mirrored)
-		this.transform1 = new InitialTransform( template, wing );
+		this.transform1 = new InitialTransform( pTemplate.output, pWing.output );
 
 		// the object for the non-rigid alignment (for later down)
 		this.nra = new NonrigidAlignment();
@@ -71,6 +83,7 @@ public class Alignment
 		{
 			IJ.log( "Mirroring wing" );
 			Mirror.mirror( wing, 0, Threads.numThreads() );
+			Mirror.mirror( pWing.output, 0, Threads.numThreads() );
 			Mirror.mirror( wingGene, 0, Threads.numThreads() );
 		}
 
@@ -80,20 +93,10 @@ public class Alignment
 		// the affine model from the findInitialModel() method
 		this.model = transform1.model();
 
-		// preprocess and transform in order to run the bunwarpj properly
-		final Preprocess pTemplate = new Preprocess( template );
-		
-		// compute a tophat filter (previously a big Gauss and subtract it)
-		pTemplate.homogenize();
 		
 		// extend the image by 20%, use the simple method - and rembember the offset (how much we extended)
 		this.offset = Util.getArrayFromValue( pTemplate.extend( 0.2f, true ), wing.numDimensions() );
 
-		// preprocess and transform in order to run the bunwarpj properly
-		final Preprocess pWing = new Preprocess( wing );
-		
-		// compute a tophat filter (previously a big Gauss and subtract it)
-		pWing.homogenize();
 		
 		// extend the image by 20%, use the simple method
 		pWing.extend( 0.2f, true );
