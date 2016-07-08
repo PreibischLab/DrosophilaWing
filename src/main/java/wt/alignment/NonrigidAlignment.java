@@ -267,7 +267,8 @@ public class NonrigidAlignment
 
 		targetImp.show();
 		sourceImp.show();
-		SimpleMultiThreading.threadHaltUnClean();
+		
+		//SimpleMultiThreading.threadHaltUnClean();
 
 		/*
 		 * targetImp - input target image
