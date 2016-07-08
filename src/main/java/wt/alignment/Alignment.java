@@ -116,8 +116,10 @@ public class Alignment
 		{
 			File tmp = new File( DirectoryDebugSave, "template_affine.tif"     );
 			if (!tmp.exists())
-				new FileSaver( new ImagePlus( "template_affine"       , ImageTools.wrap( pTemplate.output ) ) ).saveAsTiff( new File( DirectoryDebugSave, "template_affine.tif"     ).getAbsolutePath() );
-			new FileSaver( new ImagePlus( "brightfield_affine"    , ImageTools.wrap( pWing.output     ) ) ).saveAsTiff( new File( DirectoryDebugSave, "brightfield_affine"+counter+".tif"  ).getAbsolutePath() );
+				new FileSaver( new ImagePlus( "template_affine"       , ImageTools.wrap( pTemplate.output ) ) )
+						.saveAsTiff( new File( DirectoryDebugSave, "template_affine.tif"     ).getAbsolutePath() );
+			new FileSaver( new ImagePlus( "brightfield_affine"    , ImageTools.wrap( pWing.output     ) ) )
+						.saveAsTiff( new File( DirectoryDebugSave, "brightfield_affine"+counter+".tif"  ).getAbsolutePath() );
 			return;
 		}
 		//SimpleMultiThreading.threadHaltUnClean();
