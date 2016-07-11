@@ -257,8 +257,8 @@ class AlignmentProcess
 	{
 		// PROCESS ONE FILE (contains two slices brightfield & fluorescence) in the data directory "data/wings" (relative)
 		setPairsDir(new File( "data/wings" ));
-		setTemplate(new File( "data/wings/tempalte2.tif" ));// what to register it to
-		addToPair("test2.tif");
+		setTemplate(new File( "data/wings/wing_template_A13_2014_01_31.tif" ));// what to register it to
+		addToPair("909_dsRed_001.tif");
  		run();
 	}
 	
