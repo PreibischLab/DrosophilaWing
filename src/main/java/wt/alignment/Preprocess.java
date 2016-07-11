@@ -265,7 +265,7 @@ public class Preprocess
 			borderPixelList.add(new Point(row, col));
 		} while ( col > 0 );
 		
-		this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
+		//this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
 		
 		Collections.sort( borderPixelList, new PointComparator< FloatType >( output ) );
 
