@@ -67,26 +67,18 @@ public class Preprocess
 			c1.get().setReal( gau + bhat);
 		}
 		
-		// Compute min and max
+		// Compute min and max (percentile for more robustness)
 		FloatType min = new FloatType();
 		FloatType max = new FloatType();
-		final ComputeMinMax<FloatType> cmm = new ComputeMinMax<FloatType>(output, min, max);
-		
-		if (!cmm.checkInput() || !cmm.process()) {
-			try {
-				throw new Exception("Coult not compute min and max: " + cmm.getErrorMessage());
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		// If min and max are the same, we just return the empty image will all zeros
-		if (0 == cmm.getMin().compareTo(cmm.getMax())) {
-			
-		}
-		min = cmm.getMin();
-		max = cmm.getMax();
 
+		ImageTools.Median med = new ImageTools.Median(output);
+		min.set( med.get(0.05) );
+		max.set( med.get(0.95) );
+		
+		// If min and max are the same, we just return the empty image will all zeros
+		if (min == max) {
+			return;
+		}
 		FloatType diff = new FloatType();
 		diff.set(max.get()-min.get());
 		// Normalize in place the target image
