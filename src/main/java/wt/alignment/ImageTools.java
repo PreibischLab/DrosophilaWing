@@ -163,6 +163,11 @@ public class ImageTools
 			return get((float)0.5);
 		}
 		
+		public float get(double percentage)
+		{
+			return get((float)percentage);
+		}
+		
 		public float get(float percentage)
 		{
 			if (percentage>1) percentage = 1;
