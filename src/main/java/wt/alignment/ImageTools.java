@@ -2,11 +2,14 @@ package wt.alignment;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import net.imglib2.Point;
+import net.imglib2.RandomAccess;
 // import mpicbg.models.IllDefinedDataPointsException;
 // import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.img.Img;
@@ -89,9 +92,6 @@ public class ImageTools
 		}
 	}
 	
-
-	
-	
 	public static final double avg( final Img< FloatType > img )
 	{
 		final RealSum sum = new RealSum();
@@ -130,6 +130,68 @@ public class ImageTools
 		}
 	}
 
+	public static class Median
+	{
+		final Img< FloatType > img;
+		final ArrayList< Point > pixelList;
+		
+		public Median(final Img< FloatType > _img)
+		{
+			this.img = _img;
+			pixelList = new ArrayList< Point >();
+			int row=0,col=0;
+			do {
+				do {
+					pixelList.add(new Point(row, col));
+					col++;
+				} while ( col < img.dimension( 1 ) - 1 );
+				row++;
+			} while ( row < img.dimension( 0 ) - 1 );
+			
+			Collections.sort( pixelList, new PointComparator< FloatType >( img ) );
+		}
+		
+		public Median(final Img< FloatType > _img, final ArrayList< Point > _pixelList)
+		{
+			this.img = _img;
+			this.pixelList = new ArrayList<Point>(_pixelList);
+			Collections.sort( pixelList, new PointComparator< FloatType >( img ) );
+		}
+
+		public float get()
+		{
+			return get((float)0.5);
+		}
+		
+		public float get(float percentage)
+		{
+			if (percentage>1) percentage = 1;
+			if (percentage<0) percentage = 0;
+			
+
+			RandomAccess< FloatType  > r = img.randomAccess();
+
+			float med = 0;
+			float pos = (pixelList.size()-1) * percentage;
+			int posInt = (int)  (float) Math.floor(pos);
+			float rem  = pos - posInt;
+			if (rem == 0)
+			{
+				r.setPosition( pixelList.get( posInt ) );
+				med = r.get().getRealFloat();
+			}
+			else {
+				r.setPosition( pixelList.get( posInt ) );
+				med += r.get().getRealFloat() * (1-rem);
+
+				r.setPosition( pixelList.get( posInt + 1 ) );
+				med += r.get().getRealFloat() * rem;
+			}
+			return med;
+		}
+	}
+
+	
 	@SuppressWarnings("unchecked")
 	public static FloatProcessor wrap( final Img< FloatType > img )
 	{
@@ -164,4 +226,6 @@ public class ImageTools
 
 		return new ImagePlus( "Overlay", stack );
 	}
+
+	
 }
