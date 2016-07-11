@@ -266,32 +266,11 @@ public class Preprocess
 		} while ( col > 0 );
 		
 		//this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
+		ImageTools.Median med = new ImageTools.Median(output, borderPixelList);
 		
-		Collections.sort( borderPixelList, new PointComparator< FloatType >( output ) );
+		this.avgBorderValue1 = med.get();
 
-		RandomAccess< FloatType  > r = output.randomAccess();
-
-		float med = 0;
-		
-		if (borderPixelList.size() % 2 == 1)
-		{
-			r.setPosition( borderPixelList.get( borderPixelList.size() / 2 ) );
-			med = r.get().getRealFloat();
-		}
-		else {
-			int i = (borderPixelList.size() / 2);
-
-			r.setPosition( borderPixelList.get( i ) );
-			med += r.get().getRealFloat();
-
-			r.setPosition( borderPixelList.get( i-1 ) );
-			med += r.get().getRealFloat();
-
-			med /= 2.0;
-		}
-		System.out.println( "median2: " + med );
-		
-		this.avgBorderValue1 = med;
+		System.out.println( "median2: " + this.avgBorderValue1 );
 		// median : 245.23547
 		// median : 249.18938
 		
