@@ -25,10 +25,10 @@ public class PointComparator< T extends RealType< T > > implements Comparator< P
 		final double v2 = r.get().getRealDouble();
 
 		if ( v1 < v2 )
-			return 1;
+			return -1;
 		else if ( v1 == v2 )
 			return 0;
 		else
-			return -1;
+			return 1;
 	}
 }
