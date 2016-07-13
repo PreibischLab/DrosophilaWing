@@ -235,27 +235,7 @@ public class Preprocess
 		// compute the average border intensity
 		// strictly 2d!
 		final ArrayList< Point > borderPixelList = 
-				new ArrayList< Point >();
-		int row=0,col=0;
-		do {
-			borderPixelList.add(new Point(row, col));
-			row++;
-		} while ( row < output.dimension( 0 ) - 1 );
-
-		do {
-			col++;
-			borderPixelList.add(new Point(row, col));
-		} while ( col < output.dimension( 1 ) - 1 );
-
-		do {
-			row--;
-			borderPixelList.add(new Point(row, col));
-		} while ( row > 0 );
-
-		do {
-			col--;
-			borderPixelList.add(new Point(row, col));
-		} while ( col > 0 );
+				ImageTools.borders(output, 20);
 		
 		//this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
 		ImageTools.Median med = new ImageTools.Median(output, borderPixelList);

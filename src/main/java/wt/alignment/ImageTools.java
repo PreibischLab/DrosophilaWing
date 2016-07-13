@@ -196,7 +196,34 @@ public class ImageTools
 		}
 	}
 
-	
+	public static ArrayList< Point > borders( Img< FloatType > img , int width)
+	{
+		final ArrayList< Point > borderPixelList = 
+		new ArrayList< Point >();
+		
+		// Left (full)
+		for (int col = 0; col < width ;col++ )
+			for (int row = 0 ; row < img.dimension( 0 ) ; row++)
+				borderPixelList.add(new Point(row, col));
+		
+		// right (full)
+		for (int col = (int)img.dimension(1)-width+1 ; col < img.dimension( 1 ) ; col++ )
+			for (int row = 0 ; row < img.dimension( 0 ) ; row++)
+				borderPixelList.add(new Point(row, col));
+		
+		// top
+		for (int row = 0; row < width ;row++ )
+			for (int col = width ; col < img.dimension( 1 )-width+1 ; col++)
+				borderPixelList.add(new Point(row, col));
+		
+		
+		// bottom
+		for (int row = (int) (img.dimension( 0 )-width+1) ; row < img.dimension( 0 ) ;row++ )
+			for (int col = width ; col < img.dimension( 1 )-width+1 ; col++)
+				borderPixelList.add(new Point(row, col));
+		
+		return borderPixelList;
+	}
 	@SuppressWarnings("unchecked")
 	public static FloatProcessor wrap( final Img< FloatType > img )
 	{
