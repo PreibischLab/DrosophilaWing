@@ -130,6 +130,14 @@ public class NonrigidAlignment
 		final float[] minMaxTarget = FusionHelper.minMax( target );
 		final float[] minMaxSource = FusionHelper.minMax( source );
 
+		/*
+		// percentile based min max (more robust to outliers
+		ImageTools.Median medT = new ImageTools.Median(target);
+		ImageTools.Median medS = new ImageTools.Median(source);
+		final float[] minMaxTarget = {medT.get(0.001), medT.get(0.999)};
+		final float[] minMaxSource = {medS.get(0.001), medS.get(0.999)};
+		*/
+		
 		String s =
 				"Source: extend value " + sourceOutOfBoundsValue + ", minmax=" + Util.printCoordinates( minMaxSource ) + "\n" +
 				"Target: extend value " + targetOutOfBoundsValue + ", minmax=" + Util.printCoordinates( minMaxTarget ) + "\n";
