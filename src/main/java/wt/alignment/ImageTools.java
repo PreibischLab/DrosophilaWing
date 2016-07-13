@@ -173,7 +173,6 @@ public class ImageTools
 		{
 			if (percentage>1) percentage = 1;
 			if (percentage<0) percentage = 0;
-			
 
 			RandomAccess< FloatType  > r = img.randomAccess();
 
