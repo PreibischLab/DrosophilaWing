@@ -27,7 +27,6 @@ public class Preprocess
 {
 	final Img< FloatType > input;
 	Img< FloatType > output;
-	double avgBorderValue1 = Double.NaN;
 
 	/**
 	 * Extend the image and homogenize the contrast for proper alignment
@@ -229,8 +228,8 @@ public class Preprocess
 
 	protected double border()
 	{
-		if ( !Double.isNaN( this.avgBorderValue1 ) )
-			return this.avgBorderValue1;
+		//if ( !Double.isNaN( this.avgBorderValue1 ) )
+		//	return this.avgBorderValue1;
 
 		// compute the average border intensity
 		// strictly 2d!
@@ -239,10 +238,9 @@ public class Preprocess
 		
 		//this.avgBorderValue1 = Median.median(output, borderPixelList).getRealDouble();
 		ImageTools.Median med = new ImageTools.Median(output, borderPixelList);
-		
-		this.avgBorderValue1 = med.get();
+		float avgBorderValue1 = med.get();
+		System.out.println( "median: " + avgBorderValue1 );
 
-		System.out.println( "median2: " + this.avgBorderValue1 );
 		// median : 245.23547
 		// median : 249.18938
 		
@@ -251,8 +249,6 @@ public class Preprocess
 	
 	protected double borderAverage()
 	{
-		if ( !Double.isNaN( this.avgBorderValue1 ) )
-			return this.avgBorderValue1;
 
 		// compute the average border intensity
 		// strictly 2d!
@@ -292,9 +288,7 @@ public class Preprocess
 			++count;
 		} while ( r.getIntPosition( 1 ) > 0 );
 
-		this.avgBorderValue1 = avg.getSum() / (double)count;
-
-		return avgBorderValue1;
+		return avg.getSum() / (double)count;
 	}
 	
 	public double avgImage( final Img< FloatType > img )
