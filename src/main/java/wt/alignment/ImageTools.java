@@ -139,8 +139,9 @@ public class ImageTools
 		{
 			this.img = _img;
 			pixelList = new ArrayList< Point >();
-			int row=0,col=0;
+			int row=0;
 			do {
+				int col=0;
 				do {
 					pixelList.add(new Point(row, col));
 					col++;
