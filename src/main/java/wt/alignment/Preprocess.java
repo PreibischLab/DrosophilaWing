@@ -248,7 +248,7 @@ public class Preprocess
 	}
 	
 	protected double borderAverage()
-	{
+	{// TODO: not used
 
 		// compute the average border intensity
 		// strictly 2d!
