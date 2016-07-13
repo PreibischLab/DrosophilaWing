@@ -93,15 +93,14 @@ public class Alignment
 
 		// the affine model from the findInitialModel() method
 		this.model = transform1.model();
-
 		
+		IJ.log( "Extends wing" );
 		// extend the image by 20%, use the simple method - and rembember the offset (how much we extended)
 		this.offset = Util.getArrayFromValue( pTemplate.extend( 0.2f, true ), wing.numDimensions() );
 
 		
 		// extend the image by 20%, use the simple method
 		pWing.extend( 0.2f, true );
-		IJ.log( "Extends wing" );
 
 		// transform pWing using the affine model from the initial transform
 		final AffineModel2D model = new AffineModel2D();
