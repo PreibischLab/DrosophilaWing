@@ -212,7 +212,6 @@ public class Preprocess
 
 		try
 		{
-
 			while ( cursor.hasNext() )
 			{
 				final FloatType t = cursor.next();
