@@ -71,8 +71,9 @@ public class Preprocess
 		FloatType max = new FloatType();
 
 		ImageTools.Median med = new ImageTools.Median(output);
-		min.set( med.get(0.05) );
-		max.set( med.get(0.95) );
+		min.set( med.get(0.02) );
+		max.set( med.get(0.98) );
+		//System.out.println( "minmax: [ " + min.get() + " , " + max.get() + "]");
 		
 		// If min and max are the same, we just return the empty image will all zeros
 		if (min == max) {
