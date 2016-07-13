@@ -15,7 +15,7 @@ import mpicbg.models.AbstractModel;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
-import mpicbg.models.SimilarityModel2D;
+import mpicbg.models.RigidModel2D;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Pair;
@@ -166,7 +166,7 @@ public class InitialTransform
 		final List< PointMatch > inliers = new ArrayList< PointMatch >();
 		//IJ.log( candidates.size() + " potentially corresponding features identified." );
 
-		AbstractModel< ? > model = new SimilarityModel2D();
+		AbstractModel< ? > model = new RigidModel2D();
 
 		boolean modelFound;
 		try
@@ -215,8 +215,9 @@ public class InitialTransform
 
 		final InitialTransformParameters p = new InitialTransformParameters( siftParam );
 
+
 		p.rod = 0.98f;
-		p.maxEpsilon = 40f;
+		p.maxEpsilon = 80f;
 		p.minInlierRatio = 0.02f;
 		p.minNumInliers = 8;
 
