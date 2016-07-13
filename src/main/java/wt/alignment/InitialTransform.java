@@ -198,6 +198,11 @@ public class InitialTransform
 			error = Double.NaN;
 		}
 
+		// TODO: either SimilarityModel2D with 40px with RigidModel2D with 80px
+		// TODO: we must check where the correspondences are in the template image,
+		// TODO: they should be distributed all over the wing (left/middle/right -- top/middle/bottom),
+		// TODO: only then the registration actually did work
+		
 		return new ValuePair< Double, List< PointMatch > >( error, inliers );
 	}
 
